@@ -1,0 +1,285 @@
+
+{% load static %}
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details Form</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .navbar {
+            background-color: #007bff;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar img {
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
+        <a href="#">Back</a>
+    </div> 
+        
+    <div class="container">
+        <h2>Personal Details</h2>
+        <form id="facultyForm" method='POST' action="{% url 'admin_personal' faculty_id=faculty.username %}">   
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="ssn">SSN ID:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.username}}</div> {% endcomment %}
+                    <div  class="field-input form-control">{{ faculty.username}}</div>
+                    
+                </div>
+            </div> 
+
+            <div class="form-group">
+                <label for="digital_id">Digital ID:</label> 
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.digital_id }}</div> {% endcomment %}
+                    <input type="number" class="field-input form-control" value="{{ faculty.personaldetail.digital_id }}" name="digital_id">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="first_name">First Name:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.first_name }}</div> {% endcomment %}
+                    <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.first_name }}" name="first_name">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Last Name:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.last_name }}</div> {% endcomment %}
+                    <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.last_name }}" name="last_name">
+                  
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="dob">Date of Birth:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.dob }}</div> {% endcomment %}
+                    <input type="date" class="field-input form-control" value="{{ faculty.personaldetail.dob }}" name="dob">
+                    
+                </div>
+            </div>
+            
+            <!-- Repeat this pattern for each field -->
+            <div class="form-group">
+                <label for="contact_number">Contact Number:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.contact_no }}</div> {% endcomment %}
+                    <input type="phone" class="field-input form-control" value="{{ faculty.personaldetail.contact_no }}" name="contact_number">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="alternate_contact_number">Alternate Contact Number:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.alternate_contact_no }}</div> {% endcomment %}
+                    <input type="phone" class="field-input form-control" value="{{ faculty.personaldetail.alternate_contact_no }}" name="alternate_contact_number">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.address }}</div> {% endcomment %}
+                    <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.address }}" name="address">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email ID:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.email_id }}</div> {% endcomment %}
+                    <input type="email" class="field-input form-control" value="{{ faculty.personaldetail.email_id }}" name="email">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="alternate_email">Alternate Email ID:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.alternate_email_id }}</div> {% endcomment %}
+                    <input type="email" class="field-input form-control" value="{{ faculty.personaldetail.alternate_email_id }}" name="alternate_email">
+                    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="aicte_id">AICTE ID:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.aicte_id }}</div> {% endcomment %}
+                    <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.aicte_id }}" name="aicte_id">
+                   
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="anna_univ_faculty_id">Anna University Faculty ID:</label>
+                <div class="field-wrapper">
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.anna_univ_faculty_id }}</div> {% endcomment %}
+                    <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.anna_univ_faculty_id }}" name="anna_univ_faculty_id">
+                   
+                </div>
+            </div>
+            
+            {% comment %} <div class="form-group">
+                <label for="blood_group">Blood Group:</label>
+                <div class="field-wrapper">
+                    <div class='form-control'>{{ faculty.personaldetail.blood_grp }}</div>
+                    <input type="text" class="field-input" value="{{ faculty.personaldetail.blood_grp }}" name="blood_group"> 
+
+                    <button type="button" class="edit-button" onclick="enableEdit(this)">Edit</button>
+                </div>
+            </div> {% endcomment %} 
+            <div class="form-group">
+                <label for="blood_group">Blood Group:</label>
+                <div class="field-wrapper">
+                    <!-- Default blood group displayed as plain text -->
+                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.blood_grp }}</div> {% endcomment %}
+                    <!-- Dropdown menu for selecting blood group -->
+                    <select class="field-input form-control" name="blood_group">
+                        <option value="A+" {% if faculty.personaldetail.blood_grp == 'A+' %} selected {% endif %}>A+</option>
+                        <option value="B+" {% if faculty.personaldetail.blood_grp == 'B+' %} selected {% endif %}>B+</option>
+                        <option value="O+" {% if faculty.personaldetail.blood_grp == 'O+' %} selected {% endif %}>O+</option>
+                        <option value="AB+" {% if faculty.personaldetail.blood_grp == 'AB+' %} selected {% endif %}>AB+</option>
+                        <option value="A-" {% if faculty.personaldetail.blood_grp == 'A-' %} selected {% endif %}>A-</option>
+                        <option value="B-" {% if faculty.personaldetail.blood_grp == 'B-' %} selected {% endif %}>B-</option>
+                        <option value="O-" {% if faculty.personaldetail.blood_grp == 'O-' %} selected {% endif %}>O-</option>
+                        <option value="AB-" {% if faculty.personaldetail.blood_grp == 'AB-' %} selected {% endif %}>AB-</option>
+                    </select>
+                    
+                </div>
+            </div> 
+
+            <button type="submit" class="edit-button" onclick="enableEdit(this)">Edit</button>
+            
+            
+        </form>
+    </div> 
+
+
+    <script>
+        // Function to toggle between displaying data and input fields
+        {% comment %} function toggleEdit(element) {
+            var formControl = element.parentElement.querySelector('.form-control');
+            var inputField = element.parentElement.querySelector('.input-field');
+
+            if (formControl && inputField) {
+                if (formControl.style.display === 'none') {
+                    formControl.style.display = 'block';
+                    inputField.style.display = 'none';
+                } else {
+                    formControl.style.display = 'none';
+                    inputField.style.display = 'block';
+                }
+            }
+        } {% endcomment %}
+
+        // Add event listeners to enable editing on click
+        {% comment %} var editButtons = document.querySelectorAll('.edit-button');
+        editButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                toggleEdit(this);
+            });
+        }); {% endcomment %} 
+        function enableEdit(button) {
+            var fieldWrapper = button.parentElement;
+            var fieldControl = fieldWrapper.querySelector('.form-control');
+            var fieldInput = fieldWrapper.querySelector('.field-input');
+
+            fieldControl.style.display = 'none';
+            fieldInput.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details</title>
+</head>
+<body>
+    <h1>Faculty Details</h1>
+    <div>
+        <strong>Username:</strong>{% if faculty.username %} {{ faculty.username }}{%endif%}<br>
+        <strong>First Name:</strong> {% if faculty.personaldetail.first_name %} {{ faculty.personaldetail.first_name }}{%endif%}<br>
+        <strong>designation Name:</strong> {% if faculty.professionaldetail.designation %} {{ faculty.professionaldetail.designation }}{%endif%}<br>
+        <!-- Add other faculty details here -->
+    </div>
+</body>
+</html>

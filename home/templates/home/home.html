@@ -1,0 +1,10 @@
+{% extends "home/base.html"%} 
+{% block content %}
+    {% for post in posts %} 
+        <p>{{post.id}}</p> 
+        <p>{{post.name}}</p> 
+        <p>{{post.context}}</p>  
+        </br>
+    {% endfor %}
+{% endblock content %}
+    

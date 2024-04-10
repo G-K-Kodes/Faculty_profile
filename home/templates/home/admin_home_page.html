@@ -1,0 +1,412 @@
+<!-- working with search options-->
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details</title>
+    <style>
+        /* General Styles */
+        body { 
+            background-color: #66ffff;
+            {% comment %} background-image: url('{% static "home/adminbg.jpg" %}'); {% endcomment %}
+            background-size: cover;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+        }
+        
+        .logo img {
+            max-width: 70px;
+            height: auto;
+        }
+        
+        main {
+            padding: 50px;
+        }
+        
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        #searchInput,
+        #searchOptions {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        #searchInput {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        #searchButton {
+            padding: 8px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .menu-icon {
+            cursor: pointer;
+            position: fixed;
+            right: 25px;
+            top: 15px;
+            z-index: 1000;
+            color: #fff;
+        }
+        
+        .menu-tab {
+            position: fixed;
+            top: 0;
+            right: -200px;
+            width: 200px;
+            height: 100%;
+            background-color: #333;
+            color: #fff;
+            padding: 2px;
+            transition: right 0.3s ease;
+            z-index: 900;
+        }
+        
+        .menu-tab.open {
+            right: 0;
+        }
+        
+        .menu-items {
+            margin-top: 20px;
+        }
+        
+        .menu-item {
+            margin-bottom: 10px;
+        }
+        
+        .menu-item label {
+            display: block;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        .menu-item input {
+            margin-right: 5px;
+        }
+        
+        /* Grid Styles */
+        .faculty-grid {
+            display:grid; 
+            grid-auto-flow:row;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 50px;
+            padding: 20px;
+        }
+        
+        .faculty-card {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        
+        .faculty-card a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .faculty-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .faculty-details { 
+            max-height:20%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            color: #fff;
+            text-align: center;
+        }
+        
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <img src= "{% static "home/college_logo.jpg" %}" alt="College Logo">
+        </div>
+    </header>
+    
+    <div class="menu-icon" onclick="toggleMenu()">
+        ☰
+    </div>
+
+    <div class="menu-tab" id="menuTab">  
+        {% comment %} <a href='admin_page/create_signup'>Create login</a> {% endcomment %}
+        <form action= "{% url 'ad_page_filter' %}"  method="POST"> 
+            {% csrf_token %}
+            <div class="menu-items">
+                <br><br><br>
+                <div class="menu-item">
+                    <label for="designation"><b>Designation</b></label>
+                    <select id="designation" name='designation' onchange="filter()">
+                        <option value="">Select Designation</option>
+                        <option value="HOD">HOD</option>
+                        <option value="Associate Professor">Associate Professor</option>
+                        <option value="Assistant Professor">Assistant Professor</option>
+                        <option value="Professor">Professor</option>
+                    </select>
+                </div><br>
+                <div class="menu-item">
+                    <label for="doj">Starting Date</label>
+                    <input type="date" id="doj" name="doj">
+                </div><br>
+                <div class="menu-item">
+                    <label for="dol">Ending Date</label>
+                    <input type="date" id="dol" name="dol">
+                </div><br>
+                <div class="menu-item">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob" name="dob">
+                </div><br>
+                <div class="menu-item">
+                    <label for="experience">Years of experience</label>
+                    <input type="number" id="experience" name="experience">
+                </div><br> 
+                <div class="menu-item">
+                    <button type="submit">Submit</button>
+                </div>
+            </div> 
+        </form>
+    </div>
+
+    <main id="mainContent">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search..." oninput="search()">
+            <select id="searchOptions" onchange="search()">
+                <option value="all">All</option>
+                <option value="ssn_id">SSN ID</option>
+                <option value="digital_id">Digital ID</option>
+                <option value="first_name">First Name</option>
+                <option value="last_name">Last Name</option>
+                <option value="contact_number">Contact Number</option>
+                <option value="email">Email</option>
+                <option value="aicte_id">AICTE ID</option>
+            </select>
+        </div>
+    
+        <br><br> 
+
+        <form action="{% url 'archive_data_view' %}" method="get">
+            <button type="submit">View Archive Data</button>
+        </form>
+
+        <form action="{% url 'create_signup' %}" method="get">
+            <button type="submit">Create New Faculty</button>
+        </form>
+    
+        <div class="faculty-grid" id="facultyGrid">
+            <!-- Faculty profile photos grid will be populated here -->
+            
+                {% for faculty_login in faculty_logins %} 
+
+                <div class="faculty-card">  
+
+                    <a href="{% url 'set_faculty_session' faculty_login.username %}">
+                        <div class="faculty-details">
+                            <strong>Username:</strong> {{ faculty_login.username }}<br> 
+                            {% if faculty_login.personaldetail.first_name %}
+                                <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
+                            {% else %}
+                                <strong>First Name:</strong> User details not filled yet<br>
+                            {% endif %}
+                        </div>
+                        <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture"> 
+                    </a> 
+
+                    <form action="{% url 'delete_faculty' faculty_login.username %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
+
+                </div>
+                {% endfor %}
+          
+        </div>
+    </main>
+    
+    
+
+    {% comment %} <main id="mainContent">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search..." oninput="search()">
+            <select id="searchOptions" onchange="search()">
+                <option value="all">All</option>
+                <option value="ssn_id">SSN ID</option>
+                <option value="digital_id">Digital ID</option>
+                <option value="first_name">First Name</option>
+                <option value="last_name">Last Name</option>
+                <option value="contact_number">Contact Number</option>
+                <option value="email">Email</option>
+                <option value="aicte_id">AICTE ID</option>
+            </select>
+        </div>
+        
+        <br><br>
+        <div class="faculty-grid" id="facultyGrid">
+           <!-- Faculty profile photos grid will be populated here -->
+<ul>
+    {% for faculty_login in faculty_logins %} 
+    <li>
+        <strong>Username:</strong> {{ faculty_login.username }}<br> 
+        {% if faculty_login.personaldetail.first_name %}
+            <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
+        {% else %}
+            <strong>First Name:</strong> User details not filled yet<br>
+        {% endif %}
+        <strong>Profile Picture:</strong><br>
+        <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
+    </li>
+{% endfor %}
+
+</ul>
+
+        </div>
+    </main> {% endcomment %}
+    <script>
+        function toggleMenu() {
+            var menuTab = document.getElementById('menuTab');
+            menuTab.classList.toggle('open');
+            document.body.classList.toggle('opened-menu'); // Toggle class on body
+        }
+
+        document.addEventListener('click', function (event) {
+            var menuTab = document.getElementById('menuTab');
+            var menuIcon = document.querySelector('.menu-icon');
+
+            // If the clicked element is not the menu tab or the menu icon, close the menu
+            if (!menuTab.contains(event.target) && !menuIcon.contains(event.target)) {
+                menuTab.classList.remove('open');
+                document.body.classList.remove('opened-menu'); // Remove class from body
+            }
+        });
+
+    function search() {
+    var input = document.getElementById('searchInput').value.toLowerCase();
+    var searchOption = document.getElementById('searchOptions').value;
+    var facultyCards = document.getElementsByClassName('faculty-card');
+
+    for (var i = 0; i < facultyCards.length; i++) {
+        var facultyCard = facultyCards[i];
+        var facultyDetails = facultyCard.textContent.toLowerCase();
+        var facultyDataIndex = i % facultyData.length;
+        var faculty = facultyData[facultyDataIndex];
+
+
+        if (searchOption === 'all') {
+            if (faculty.name.toLowerCase().includes(input) ||
+                faculty.designation.toLowerCase().includes(input) ||
+                faculty.department.toLowerCase().includes(input)) {
+                facultyCard.style.display = '';
+            } else {
+                facultyCard.style.display = 'none';
+            }
+        } else {
+            var attributeValue = faculty[searchOption].toLowerCase();
+            if (attributeValue.includes(input)) {
+                facultyCard.style.display = '';
+            } else {
+                facultyCard.style.display = 'none';
+            }
+        }
+    }
+}
+
+
+        {% comment %} var facultyData = [
+            { name: 'A', designation: 'Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
+            { name: 'B', designation: 'Assistant Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
+            { name: 'C', designation: 'HOD', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
+            { name: 'D', designation: 'Associate Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
+            { name: 'E', designation: 'Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
+            // Add more faculty data as needed
+        ];
+
+        var facultyGrid = document.getElementById('facultyGrid');
+
+        facultyData.forEach(function (faculty) {
+            var facultyCard = document.createElement('div');
+            facultyCard.classList.add('faculty-card');
+
+            var profileLink = document.createElement('a');
+            profileLink.href = faculty.profileURL;
+            profileLink.target = "_blank";
+
+            var img = document.createElement('img');
+            //img.src = 'faculty_profile_photos/dr_chandrabose_aravindan.jpg'; // Adjust the path to the actual photo
+            img.src = '{% static "home/default-profile.jpg" %}';
+            img.alt = faculty.name;
+
+            var details = document.createElement('div');
+            details.classList.add('faculty-details');
+            details.textContent = `${faculty.name} - ${faculty.designation}`; // Display name and designation
+
+            profileLink.appendChild(img);
+            facultyCard.appendChild(profileLink);
+            facultyCard.appendChild(details); // Append details to the card
+
+            facultyGrid.appendChild(facultyCard);
+        }); {% endcomment %}
+        function filter() {
+    var designationOptions = document.querySelectorAll('input[name="designation"]:checked');
+    var bloodGroupOptions = document.querySelectorAll('input[name="blood-group"]:checked');
+    var facultyCards = document.getElementsByClassName('faculty-card');
+
+    for (var i = 0; i < facultyCards.length; i++) {
+        var facultyCard = facultyCards[i];
+        var facultyDataIndex = i % facultyData.length;
+        var faculty = facultyData[facultyDataIndex];
+
+        var shouldDisplay = true;
+
+        if (designationOptions.length > 0) {
+            shouldDisplay = shouldDisplay && Array.from(designationOptions).some(option => option.value === faculty.designation);
+        }
+
+        if (bloodGroupOptions.length > 0) {
+            shouldDisplay = shouldDisplay && Array.from(bloodGroupOptions).some(option => option.value === faculty.bloodGroup);
+        }
+
+        if (shouldDisplay) {
+            facultyCard.style.display = '';
+        } else {
+            facultyCard.style.display = 'none';
+        }
+    }
+}
+
+    </script> 
+</body>
+
+</html>

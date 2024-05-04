@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ faculty.username }} Report</title>
+</head>
+<body>
+    <h1>{{ faculty.username }} Report</h1>
+    <h2>Personal Details:</h2>
+    <p><strong>First Name:</strong> {{ faculty.personaldetail.first_name }}</p>
+    <p><strong>Last Name:</strong> {{ faculty.personaldetail.last_name }}</p>
+    <p><strong>Date of Birth:</strong> {{ faculty.personaldetail.dob }}</p>
+    <p><strong>Contact No:</strong> {{ faculty.personaldetail.contact_no }}</p>
+    <p><strong>Address:</strong> {{ faculty.personaldetail.address }}</p>
+    <p><strong>Email ID:</strong> {{ faculty.personaldetail.email_id }}</p>
+    <p><strong>AICTE ID:</strong> {{ faculty.personaldetail.aicte_id }}</p>
+    <p><strong>Blood Group:</strong> {{ faculty.personaldetail.get_blood_grp_display }}</p>
+
+    <h2>Professional Details:</h2>
+    <p><strong>Designation:</strong> {{ faculty.professionaldetail.designation }}</p>
+    <p><strong>Highest Qualification:</strong> {{ faculty.professionaldetail.get_highest_qualification_display }}</p>
+    <p><strong>Joining Date:</strong> {{ faculty.professionaldetail.joining_date }}</p>
+    <p><strong>Years of Experience:</strong> {{ faculty.professionaldetail.years_of_experience }}</p>
+    <p><strong>Languages Known:</strong> {{ faculty.professionaldetail.languages_known }}</p>
+    <p><strong>Programming Languages:</strong> {{ faculty.professionaldetail.programming_languages }}</p>
+
+    <!-- Include other details as needed -->
+</body>
+</html>

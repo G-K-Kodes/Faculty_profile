@@ -93,8 +93,6 @@ def register(request):
     form=UserCreationForm() 
     return render(request,'') 
 
-
-
 def faculty_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')

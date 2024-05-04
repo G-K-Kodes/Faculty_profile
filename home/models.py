@@ -41,10 +41,10 @@ class Faculty_Login(models.Model):
     def set_password(self,passw):
         self.password=passw  
     
-    def delete(self, *args, **kwargs): 
-        pass 
-        # self.deleted = True
-        # self.save()
+    def delete(self, *args, **kwargs):  
+
+        self.deleted = True
+        self.save()
         # archived_data = {}
 
         # if hasattr(self, 'personaldetail'):
@@ -153,8 +153,8 @@ class PersonalDetail(models.Model):
         ('AB-', 'AB-'),
         ('O-', 'O-'),
     ]
-
-    digital_id = models.CharField(max_length=DIGITAL_ID_MAX_LENGTH, primary_key=True)  
+    # sno = models.AutoField(primary_key=True)
+    digital_id = models.CharField(max_length=DIGITAL_ID_MAX_LENGTH,primary_key=True)  
     dob=models.DateField(null=True)
     first_name = models.CharField(max_length=FIRST_NAME_MAX_LENGTH)
     last_name = models.CharField(max_length=LAST_NAME_MAX_LENGTH)
@@ -210,7 +210,6 @@ class CoursesTaught(models.Model):
     user = models.ForeignKey(Faculty_Login, on_delete=models.CASCADE)
 
 
-
 class AcademicPerformance(models.Model): 
     sno=models.AutoField(primary_key=True)
     user = models.ForeignKey(Faculty_Login, on_delete=models.CASCADE)
@@ -223,7 +222,10 @@ class AcademicPerformance(models.Model):
     remark = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.user.username} - {self.degree} ({self.year_of_completion})"  
+        return f"{self.user.username} - {self.degree} ({self.year_of_completion})" 
+    
+
+ 
 
     # class Meta:
     #     # Define unique constraint on user and degree combination

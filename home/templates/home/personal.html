@@ -99,7 +99,12 @@
     </div> 
         
     <div class="container">
-        <h2>Personal Details</h2>
+        <h2>Personal Details</h2> 
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
         <form id="facultyForm" method='POST' action="{% url 'admin_personal' faculty_id=faculty.username %}">   
             {% csrf_token %}
 
@@ -139,14 +144,19 @@
                 </div>
             </div>
             
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="dob">Date of Birth:</label>
                 <div class="field-wrapper">
-                    {% comment %} <div class='form-control'>{{ faculty.personaldetail.dob }}</div> {% endcomment %}
+                    <div class='form-control'>{{ faculty.personaldetail.dob }}</div>
                     <input type="date" class="field-input form-control" value="{{ faculty.personaldetail.dob }}" name="dob">
                     
                 </div>
+            </div> --> 
+            <div class="form-group">
+                <label for="dob">Date of Birth:</label>
+                <input type="date" class="field-input form-control" value="{{ faculty.personaldetail.dob|date:'Y-m-d' }}"  name="dob">
             </div>
+            
             
             <!-- Repeat this pattern for each field -->
             <div class="form-group">
@@ -158,14 +168,14 @@
                 </div>
             </div>
             
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="alternate_contact_number">Alternate Contact Number:</label>
                 <div class="field-wrapper">
                     {% comment %} <div class='form-control'>{{ faculty.personaldetail.alternate_contact_no }}</div> {% endcomment %}
                     <input type="phone" class="field-input form-control" value="{{ faculty.personaldetail.alternate_contact_no }}" name="alternate_contact_number">
                     
                 </div>
-            </div>
+            </div> -->
             
             <div class="form-group">
                 <label for="address">Address:</label>
@@ -184,7 +194,7 @@
                     
                 </div>
             </div>
-            
+<!--             
             <div class="form-group">
                 <label for="alternate_email">Alternate Email ID:</label>
                 <div class="field-wrapper">
@@ -192,7 +202,7 @@
                     <input type="email" class="field-input form-control" value="{{ faculty.personaldetail.alternate_email_id }}" name="alternate_email">
                     
                 </div>
-            </div>
+            </div> -->
             
             <div class="form-group">
                 <label for="aicte_id">AICTE ID:</label>
@@ -203,14 +213,14 @@
                 </div>
             </div>
             
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="anna_univ_faculty_id">Anna University Faculty ID:</label>
                 <div class="field-wrapper">
                     {% comment %} <div class='form-control'>{{ faculty.personaldetail.anna_univ_faculty_id }}</div> {% endcomment %}
                     <input type="text" class="field-input form-control" value="{{ faculty.personaldetail.anna_univ_faculty_id }}" name="anna_univ_faculty_id">
                    
                 </div>
-            </div>
+            </div> -->
             
             {% comment %} <div class="form-group">
                 <label for="blood_group">Blood Group:</label>
@@ -241,7 +251,7 @@
                 </div>
             </div> 
 
-            <button type="submit" class="edit-button" onclick="enableEdit(this)">Edit</button>
+            <button type="submit" class="edit-button" onclick="enableEdit(this)">Submit</button>
             
             
         </form>
@@ -250,28 +260,7 @@
 
     <script>
         // Function to toggle between displaying data and input fields
-        {% comment %} function toggleEdit(element) {
-            var formControl = element.parentElement.querySelector('.form-control');
-            var inputField = element.parentElement.querySelector('.input-field');
-
-            if (formControl && inputField) {
-                if (formControl.style.display === 'none') {
-                    formControl.style.display = 'block';
-                    inputField.style.display = 'none';
-                } else {
-                    formControl.style.display = 'none';
-                    inputField.style.display = 'block';
-                }
-            }
-        } {% endcomment %}
-
-        // Add event listeners to enable editing on click
-        {% comment %} var editButtons = document.querySelectorAll('.edit-button');
-        editButtons.forEach(function(button) {
-            button.addEventListener('click', function() {
-                toggleEdit(this);
-            });
-        }); {% endcomment %} 
+       
         function enableEdit(button) {
             var fieldWrapper = button.parentElement;
             var fieldControl = fieldWrapper.querySelector('.form-control');

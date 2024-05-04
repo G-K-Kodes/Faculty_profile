@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Faculty Academic Performance Details</title>
+    <title>Faculty Academic Performance Details</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -76,7 +76,7 @@
             border-color: #007bff;
         }
 
-        button[type="submit"] {
+        button[type="button"] {
             background-color: #007bff;
             color: #fff;
             padding: 12px 20px;
@@ -87,7 +87,7 @@
             transition: background-color 0.3s ease;
         }
 
-        button[type="submit"]:hover {
+        button[type="button"]:hover {
             background-color: #0056b3;
         }
     </style>
@@ -100,30 +100,117 @@
     </div>
     <div class="container">
         <h2>Academic Performance</h2>
-        <form id="facultyForm">
-            {% for performance in academic%}
+        {% if error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        <form id="academicPerformanceForm" method='POST' action="{% url 'admin_academic' faculty_id=faculty.username %}">
+            {% csrf_token %}
+            {% for performance in academic %}
             <div class="form-group">
-                <label for="degree">Degree:</label>
-                <div class='form-control'>{{ performance.degree }}</div>
+                <label for="degree{{ forloop.counter }}">Degree:</label>
+                <input type="text" class="form-control" id="degree{{ forloop.counter }}"
+                    name="degree{{ forloop.counter }}" value="{{ performance.degree }}">
             </div>
             <div class="form-group">
-                <label for="institution-code">Institution Code:</label>
-                <div class='form-control'>{{ performance.institution_code }}</div>
+                <label for="institution-code{{ forloop.counter }}">Institution Code:</label>
+                <input type="text" class="form-control" id="institution-code{{ forloop.counter }}"
+                    name="institution-code{{ forloop.counter }}" value="{{ performance.institution_code }}">
             </div>
             <div class="form-group">
-                <label for="year-of-completion">Year of Completion:</label>
-                <div class='form-control'>{{ performance.year_of_completion }}</div>
+                <label for="year-of-completion{{ forloop.counter }}">Year of Completion:</label> 
+                {% with parsed_date=performance.year_of_completion|date:"Y-m-d" %}
+                <input type="date" class="form-control" id="year-of-completion{{ forloop.counter }}" name="year-of-completion{{ forloop.counter }}" value="{{ parsed_date }}">
+                {% endwith %}
+
+                <!-- <input type="date" class="form-control" id="year-of-completion{{ forloop.counter }}"
+                    name="year-of-completion{{ forloop.counter }}" value="{{ performance.year_of_completion }}"> -->
             </div>
             <div class="form-group">
-                <label for="remark">Remark:</label>
-                <div class='form-control'>{{ performance.remark }}</div>
+                <label for="remark{{ forloop.counter }}">Remark:</label>
+                <input type="text" class="form-control" id="remark{{ forloop.counter }}"
+                    name="remark{{ forloop.counter }}" value="{{ performance.remark }}">
             </div>
             {% endfor %}
-            {% comment %} <div class="form-group">
-                <button type="submit">Submit</button>
-            </div> {% endcomment %}
+            <div id="additionalFields">
+                <!-- Additional input fields will be appended here -->
+            </div>
+            <div id="buttonContainer" class="form-group">
+                <button type="button" onclick="addInputFields()">Add Input Fields</button>
+            </div>
+            <button type="submit" id="submitButton" style="display: none;">Submit</button>
         </form>
     </div>
+    <script>
+        var counter = {{ academic| length }};
+
+        function addInputFields() {
+            var formContainer = document.getElementById('academicPerformanceForm');
+            var additionalFieldsContainer = document.getElementById('additionalFields');
+            var formContent = '';
+
+            // Increment counter
+            counter++;
+
+            // Create input fields
+            formContent += '<div class="form-group">';
+            formContent += '<label for="degree' + counter + '">Degree:</label>';
+            formContent += '<input type="text" class="form-control" id="degree' + counter + '" name="degree' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="institution-code' + counter + '">Institution Code:</label>';
+            formContent += '<input type="text" class="form-control" id="institution-code' + counter + '" name="institution-code' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="year-of-completion' + counter + '">Year of Completion:</label>';
+            formContent += '<input type="date" class="form-control" id="year-of-completion' + counter + '" name="year-of-completion' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="remark' + counter + '">Remark:</label>';
+            formContent += '<input type="text" class="form-control" id="remark' + counter + '" name="remark' + counter + '">';
+            formContent += '</div>';
+
+            // Append form content to additional fields container
+            additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
+
+            // Display the submit button
+            document.getElementById('submitButton').style.display = 'block';
+        }
+
+        // Function to handle form submission
+        document.getElementById('academicPerformanceForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Serialize form data
+            var formData = new FormData(this);
+
+            // Send form data via AJAX to Django view for processing
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Data updated successfully');
+                        location.reload(); // Refresh the page after successful submission
+                    } else {
+                        throw new Error('Failed to update data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update data');
+                });
+        });
+    </script>
+
 </body>
 
 </html>

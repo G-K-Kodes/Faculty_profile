@@ -1,4 +1,5 @@
- <!DOCTYPE html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +10,9 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-image: url('https://images.shiksha.com/mediadata/images/1602131725phpLQmAQp.jpeg');
+            background-image: url("{% static "home/it_img.jpeg" %}"); 
+            background-repeat:no-repeat;
+            background-size:cover;
             height: 100vh;
             margin: 0;
             display: flex;
@@ -87,8 +90,8 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="content-box">
-                    <h1>Faculty Activities</h1>
-                    <p>Explore various activities and roles within the faculty community.</p>
+                    <h1>Faculty Profile Management</h1>
+                    <!-- <p>Explore various activities and roles within the faculty community.</p> -->
 
                     <div class="btn-container">
                         <a href="adminlogin" class="btn btn-primary">

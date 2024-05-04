@@ -4,7 +4,7 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Faculty Details Form</title>
+   <title>Faculty Awards Details</title>
    <style>
        body {
            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -75,7 +75,7 @@
            border-color: #007bff;
        }
 
-       button[type="submit"] {
+       button[type="button"] {
            background-color: #007bff;
            color: #fff;
            padding: 12px 20px;
@@ -86,7 +86,7 @@
            transition: background-color 0.3s ease;
        }
 
-       button[type="submit"]:hover {
+       button[type="button"]:hover {
            background-color: #0056b3;
        }
    </style>
@@ -97,30 +97,90 @@
        <a href="#">Back</a>
    </div>
    <div class="container">
-       <h2>Awards</h2> 
-       <div class="form-group">
-            <label for="ssn">SSN ID:</label>
-            <div class='form-control'>{{faculty.username}}</div>
-        </div>
-       <form id="facultyForm"> 
-            {% for award in awards %}
-                
-                <div class="form-group">
-                    <label for="award-name">Name of the award:</label> 
-                    <div class='form-control'>{{award.awardname}}</div>
-                    {% comment %} <input type="text" id="digital_id" name="digital_id" required> {% endcomment %}
-                    
-                </div>
-                <div class="form-group">
-                    <label for="first_name">Year received:</label>
-                    <div class='form-control'>{{award.year_of_rec}}</div>
-                    {% comment %} <input type="text" id="first_name" name="first_name" required> {% endcomment %}
-                </div>
+       <h2>Awards</h2>
+       {% if error_message %}
+       <div class="alert alert-danger" role="alert">
+           {{ error_message }}
+       </div>
+       {% endif %}
+       <form id="awardsForm" method="POST" action="{% url 'admin_awards' faculty_id=faculty.username %}">
+           {% csrf_token %}
+           {% for award in awards %}
+           <div class="form-group">
+               <label for="award-name{{ forloop.counter }}">Name of the award:</label>
+               <input type="text" class="form-control" id="award-name{{ forloop.counter }}" name="award-name{{ forloop.counter }}" value="{{ award.awardname }}">
+           </div>
+           <div class="form-group">
+               <label for="year-of-rec{{ forloop.counter }}">Year received:</label>
+               <input type="date" class="form-control" id="year-of-rec{{ forloop.counter }}" name="year-of-rec{{ forloop.counter }}" value="{{ award.year_of_rec|date:'Y-m-d' }}">
+           </div>
            {% endfor %}
-           {% comment %} <div class="form-group">
-               <button type="submit">Submit</button>
-           </div> {% endcomment %}
+           <div id="additionalFields">
+               <!-- Additional input fields will be appended here -->
+           </div>
+           <div id="buttonContainer" class="form-group">
+               <button type="button" onclick="addInputFields()">Add Award</button>
+           </div>
+           <button type="submit" id="submitButton" style="display: none;">Submit</button>
        </form>
    </div>
+   <script>
+       var counter = {{ awards|length }};
+
+       function addInputFields() {
+           var formContainer = document.getElementById('awardsForm');
+           var additionalFieldsContainer = document.getElementById('additionalFields');
+           var formContent = '';
+
+           // Increment counter
+           counter++;
+
+           // Create input fields
+           formContent += '<div class="form-group">';
+           formContent += '<label for="award-name' + counter + '">Name of the award:</label>';
+           formContent += '<input type="text" class="form-control" id="award-name' + counter + '" name="award-name' + counter + '">';
+           formContent += '</div>';
+
+           formContent += '<div class="form-group">';
+           formContent += '<label for="year-of-rec' + counter + '">Year received:</label>';
+           formContent += '<input type="date" class="form-control" id="year-of-rec' + counter + '" name="year-of-rec' + counter + '">';
+           formContent += '</div>';
+
+           // Append form content to additional fields container
+           additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
+
+           // Display the submit button
+           document.getElementById('submitButton').style.display = 'block';
+       }
+
+       // Function to handle form submission
+       document.getElementById('awardsForm').addEventListener('submit', function (event) {
+           event.preventDefault(); // Prevent default form submission
+
+           // Serialize form data
+           var formData = new FormData(this);
+
+           // Send form data via AJAX to Django view for processing
+           fetch(this.action, {
+               method: 'POST',
+               body: formData,
+               headers: {
+                   'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+               }
+           })
+               .then(response => {
+                   if (response.ok) {
+                       alert('Data updated successfully');
+                       location.reload(); // Refresh the page after successful submission
+                   } else {
+                       throw new Error('Failed to update data');
+                   }
+               })
+               .catch(error => {
+                   console.error('Error:', error);
+                   alert('Failed to update data');
+               });
+       });
+   </script>
 </body>
-</html> 
+</html>

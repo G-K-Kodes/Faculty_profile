@@ -1,133 +1,182 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Faculty Details Form</title>
-   <style>
-       body {
-           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-           margin: 0;
-           padding: 0;
-           background-color: #f9f9f9;
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details Form</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
 
-       .navbar {
-           background-color: #007bff;
-           padding: 10px 20px;
-           display: flex;
-           align-items: center;
-           justify-content: space-between;
-       }
+        .navbar {
+            background-color: #007bff;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-       .navbar img {
-           height: 30px;
-           vertical-align: middle;
-           margin-right: 10px;
-       }
+        .navbar img {
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
 
-       .navbar a {
-           color: #fff;
-           text-decoration: none;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .container {
-           width: 80%;
-           margin: 50px auto;
-           background-color: #fff;
-           padding: 30px;
-           border-radius: 10px;
-           box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-       }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
 
-       h2 {
-           text-align: center;
-           color: #333;
-           margin-bottom: 30px;
-       }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
 
-       .form-group {
-           margin-bottom: 20px;
-       }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-       label {
-           display: block;
-           margin-bottom: 5px;
-           color: #555;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .form-control {
-           width: calc(100% - 24px);
-           padding: 12px;
-           border: 1px solid #ccc;
-           border-radius: 5px;
-           font-size: 16px;
-           transition: border-color 0.3s ease;
-       }
+        .form-control {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
 
-       .form-control:focus {
-           outline: none;
-           border-color: #007bff;
-       }
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
 
-       button[type="submit"] {
-           background-color: #007bff;
-           color: #fff;
-           padding: 12px 20px;
-           border: none;
-           border-radius: 5px;
-           font-size: 16px;
-           cursor: pointer;
-           transition: background-color 0.3s ease;
-       }
+        button[type="button"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-       button[type="submit"]:hover {
-           background-color: #0056b3;
-       }
-   </style>
+        button[type="button"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
+
 <body>
-   <div class="navbar">
-       <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
-       <a href="#">Back</a>
-   </div>
-   <div class="container">
-       <h2>Profesional Experience Details</h2> 
-       <div class="form-group">
-        <label for="ssn">SSN ID:</label>
-        <div class='form-control'>{{faculty.username}}</div>
+    <div class="navbar">
+        <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
+        <a href="#">Back</a>
+    </div>
+    <div class="container">
+        <h2>Professional Experience Details</h2>
+        <div class="form-group">
+            <label for="ssn">SSN ID:</label>
+            <div class='form-control'>{{faculty.username}}</div>
         </div>
-       <form id="facultyForm"> 
+        <form id="facultyForm" method="post" action="{% url 'admin_profexp' faculty_id=faculty.username %}">
+            {% csrf_token %}
             {% for pro in prof_exp %}
-                    
-                    <div class="form-group">
-                        <label for="designation">Designation:</label> 
-                        <div class='form-control'>{{pro.designation}}</div>
-                        {% comment %} <input type="text" id="digital_id" name="digital_id" required> {% endcomment %}
-                        
-                    </div>
-                    <div class="form-group">
-                        <label for="institution-code">Institution Code:</label>
-                        <div class='form-control'>{{pro.institution_code}}</div>
-                        {% comment %} <input type="text" id="first_name" name="first_name" required> {% endcomment %}
-                    </div>
-                    <div class="form-group">
-                        <label for="from-date">From Date:</label>
-                        <div class='form-control'>{{pro.from_date}}</div>
-                        {% comment %} <input type="text" id="last_name" name="last_name" required> {% endcomment %}
-                    </div>
-                    <div class="form-group">
-                        <label for="to-date">To Date:</label>
-                        <div class='form-control'>{{pro.to_date}}</div>
-                        {% comment %} <input type="date" id="dob" name="dob" required> {% endcomment %}
-                    </div> 
-            {%endfor%}
-       </form>
-   </div>
+            <div class="form-group">
+                <label for="designation">Designation:</label>
+                <input type="text" class="form-control" id="designation-{{ forloop.counter }}"
+                    name="designation-{{ forloop.counter }}" value="{{ pro.designation }}">
+            </div>
+            <div class="form-group">
+                <label for="institution-code">Institution Code:</label>
+                <input type="text" class="form-control" id="institution-code-{{ forloop.counter }}"
+                    name="institution-code-{{ forloop.counter }}" value="{{ pro.institution_code }}">
+            </div>
+            <div class="form-group">
+                <label for="from-date">From Date:</label>
+                <input type="date" class="form-control" id="from-date-{{ forloop.counter }}"
+                    name="from-date-{{ forloop.counter }}" value="{{ pro.from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label for="to-date">To Date:</label>
+                <input type="date" class="form-control" id="to-date-{{ forloop.counter }}"
+                    name="to-date-{{ forloop.counter }}" value="{{ pro.to_date|date:'Y-m-d' }}">
+            </div>
+            {% endfor %}
+            <div id="additionalFields">
+                <!-- Additional input fields will be appended here -->
+            </div>
+            <div id="buttonContainer" class="form-group">
+                <button type="button" onclick="addInputFields()">Add Input Fields</button>
+            </div>
+            <button type="submit" id="submitButton" style="display: none;">Submit</button>
+        </form>
+    </div>
+    <script>
+        var counter = {{ prof_exp|length }};
+
+        function addInputFields() {
+            var formContainer = document.getElementById('facultyForm');
+            var additionalFieldsContainer = document.getElementById('additionalFields');
+            var formContent = '';
+
+            // Increment counter
+            counter++;
+
+            // Create input fields
+            formContent += '<div class="form-group">';
+            formContent += '<label for="designation-' + counter + '">Designation:</label>';
+            formContent += '<input type="text" class="form-control" id="designation-' + counter + '" name="designation-' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="institution-code-' + counter + '">Institution Code:</label>';
+            formContent += '<input type="text" class="form-control" id="institution-code-' + counter + '" name="institution-code-' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="from-date-' + counter + '">From Date:</label>';
+            formContent += '<input type="date" class="form-control" id="from-date-' + counter + '" name="from-date-' + counter + '">';
+            formContent += '</div>';
+
+            formContent += '<div class="form-group">';
+            formContent += '<label for="to-date-' + counter + '">To Date:</label>';
+            formContent += '<input type="date" class="form-control" id="to-date-' + counter + '" name="to-date-' + counter + '">';
+            formContent += '</div>';
+
+            // Append form content to additional fields container
+            additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
+
+            // Display the submit button
+            document.getElementById('submitButton').style.display = 'block';
+        }
+    </script>
+
 </body>
-</html> 
+
+</html>

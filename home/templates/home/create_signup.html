@@ -34,7 +34,7 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color:#8ed6e2                 /* Properly referencing the static background image */
+            background-color:beige;                /* Properly referencing the static background image */
             background-size: cover;
             background-position: center;
             display: flex;
@@ -75,7 +75,7 @@
         {% if error_message %}
             <p class="error-message">{{ error_message }}</p>
         {% endif %}
-        <form method="POST" action="{% url 'admin_personal' %}">
+        <form method="POST" action="{% url 'create_signup' %}">
             {% csrf_token %}
             <div class="form-group">
                 <label for="username">Username:</label>

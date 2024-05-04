@@ -1,143 +1,149 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Faculty Details Form</title>
-   <style>
-       body {
-           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-           margin: 0;
-           padding: 0;
-           background-color: #f9f9f9;
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details Form</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
 
-       .navbar {
-           background-color: #007bff;
-           padding: 10px 20px;
-           display: flex;
-           align-items: center;
-           justify-content: space-between;
-       }
+        .navbar {
+            background-color: #007bff;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-       .navbar img {
-           height: 30px;
-           vertical-align: middle;
-           margin-right: 10px;
-       }
+        .navbar img {
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
 
-       .navbar a {
-           color: #fff;
-           text-decoration: none;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .container {
-           width: 80%;
-           margin: 50px auto;
-           background-color: #fff;
-           padding: 30px;
-           border-radius: 10px;
-           box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-       }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
 
-       h2 {
-           text-align: center;
-           color: #333;
-           margin-bottom: 30px;
-       }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
 
-       .form-group {
-           margin-bottom: 20px;
-       }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-       label {
-           display: block;
-           margin-bottom: 5px;
-           color: #555;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .form-control {
-           width: calc(100% - 24px);
-           padding: 12px;
-           border: 1px solid #ccc;
-           border-radius: 5px;
-           font-size: 16px;
-           transition: border-color 0.3s ease;
-       }
+        .form-control {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
 
-       .form-control:focus {
-           outline: none;
-           border-color: #007bff;
-       }
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
 
-       button[type="submit"] {
-           background-color: #007bff;
-           color: #fff;
-           padding: 12px 20px;
-           border: none;
-           border-radius: 5px;
-           font-size: 16px;
-           cursor: pointer;
-           transition: background-color 0.3s ease;
-       }
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-       button[type="submit"]:hover {
-           background-color: #0056b3;
-       }
-   </style>
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
+
 <body>
-   <div class="navbar">
-       <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
-       <a href="#">Back</a>
-   </div>
-   <div class="container">
-       <h2>Professional Details</h2>
-       <form id="facultyForm">
-           <div class="form-group">
-               <label for="ssn">SSN ID:</label>
-               <div class='form-control'>{{faculty.username}}</div>
-           </div>
-           <div class="form-group">
-               <label for="designation">Designation :</label> 
-               <div class='form-control'>{{faculty.professionaldetail.designation}}</div>
-               {% comment %} <input type="text" id="digital_id" name="digital_id" required> {% endcomment %}
-               
-           </div>
-           <div class="form-group">
-               <label for="highest-qualification">Highest Qualification:</label>
-               <div class='form-control'>{{faculty.professionaldetail.highest_qualification}}</div>
-               {% comment %} <input type="text" id="first_name" name="first_name" required> {% endcomment %}
-           </div>
-           <div class="form-group">
-               <label for="joining-date">Joining Date:</label>
-               <div class='form-control'>{{faculty.professionaldetail.joining_date}}</div>
-               {% comment %} <input type="text" id="last_name" name="last_name" required> {% endcomment %}
-           </div>
-           <div class="form-group">
-               <label for="leaving-date">Leaving Date:</label>
-               <div class='form-control'>{{faculty.professionaldetail.leaving_date}}</div>
-               {% comment %} <input type="date" id="dob" name="dob" required> {% endcomment %}
-           </div>
-           <div class="form-group">
-               <label for="languages-known">Languages Known:</label>
-               <div class='form-control'>{{faculty.professionaldetail.languages_known}}</div>
-               {% comment %} <input type="text" id="contact_number" name="contact_number" required> {% endcomment %}
-           </div>
-           <div class="form-group">
-               <label for="programming-languages">Programming languages Known:</label>
-               <div class='form-control'>{{faculty.professionaldetail.programming_languages}}</div>
-               {% comment %} <input type="text" id="alternate_contact_number" name="alternate_contact_number"> {% endcomment %}
-           </div>
-           {% comment %} <div class="form-group">
-               <button type="submit">Submit</button>
-           </div> {% endcomment %}
-       </form>
-   </div>
+    <div class="navbar">
+        <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
+        <a href="#">Back</a>
+    </div>
+    <div class="container">
+        <h2>Professional Details</h2>
+        <form id="facultyForm" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="ssn">SSN ID:</label>
+                <div class='form-control'>{{faculty.username}}</div>
+            </div>
+            <div class="form-group">
+                <label for="designation">Designation:</label>
+                <input type="text" class="form-control" id="designation" name="designation"
+                    value="{{faculty.professionaldetail.designation}}">
+            </div>
+            <div class="form-group">
+                <label for="highest-qualification">Highest Qualification:</label>
+                <input type="text" class="form-control" id="highest_qualification" name="highest_qualification"
+                    value="{{faculty.professionaldetail.highest_qualification}}">
+            </div>
+            <div class="form-group">
+                <label for="joining-date">Joining Date:</label>
+                {% with parsed_date=professionaldetail.joining_date|date:"Y-m-d" %}
+                <input type="date" class="form-control" id="joining_date" name="joining_date"
+                value="{{faculty.professionaldetail.joining_date|date:'Y-m-d'}}">
+                {% endwith %}
+            </div>
+            <div class="form-group">
+                <label for="leaving-date">Leaving Date:</label>
+                {% with parsed_date=professionaldetail.leaving_date|date:"Y-m-d" %}
+                <input type="date" class="form-control" id="leaving_date" name="leaving_date"
+                value="{{faculty.professionaldetail.leaving_date|date:'Y-m-d'}}">
+                {% endwith %}
+            </div>
+            <div class="form-group">
+                <label for="languages-known">Languages Known:</label>
+                <input type="text" class="form-control" id="languages_known" name="languages_known"
+                    value="{{faculty.professionaldetail.languages_known}}">
+            </div>
+            <div class="form-group">
+                <label for="programming-languages">Programming languages Known:</label>
+                <input type="text" class="form-control" id="programming_languages" name="programming_languages"
+                    value="{{faculty.professionaldetail.programming_languages}}">
+            </div>
+            <div class="form-group">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
 </body>
-</html> 
+</html>

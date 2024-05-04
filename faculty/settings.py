@@ -31,7 +31,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = [ 
+INSTALLED_APPS = [
     'home.apps.HomeConfig',
     "django.contrib.admin",
     "django.contrib.auth",
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_xhtml2pdf"
 ]
 
 MIDDLEWARE = [

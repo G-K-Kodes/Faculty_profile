@@ -13,6 +13,9 @@ urlpatterns = [
     path("adminlogin/admin_page/archive/filter",views.archive_page_filter,name='archive_page_filter'),
     path('adminlogin/<int:faculty_id>/', views.set_faculty_session, name='set_faculty_session'),  
     path('create_signup',views.create_signup,name='create_signup'),
+    path('success/', views.success_view, name='success_url'),
+    # path('<str:username>/', views.generate_report, name='generate_report'),
+    # path('update_academic_performance/<str:faculty_id>/', views.update_academic_performance, name='update_academic_performance'),
 
     path('adminlogin/<int:faculty_id>/admin_personal', views.admin_personal, name='admin_personal'),
     path('adminlogin/<int:faculty_id>/admin_academic', views.admin_academic, name='admin_academic'),
@@ -20,6 +23,7 @@ urlpatterns = [
     path('adminlogin/<int:faculty_id>/admin_professionalexp', views.admin_profexp, name='admin_profexp'),
     path('adminlogin/<int:faculty_id>/admin_coursestaught', views.admin_coursestaught, name='admin_coursestaught'), 
     path('adminlogin/<int:faculty_id>/admin_awards', views.admin_awards, name='admin_awards'), 
+
 
 
 

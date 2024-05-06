@@ -176,6 +176,10 @@ def create_signup(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+
+        if not username.isdigit():
+            return render(request, 'home/create_signup.html', {'error_message': 'Digital ID must be a number.'})
+        
         if username and password:
             Faculty_Login.objects.create(username=username, password=password)
 
@@ -417,18 +421,55 @@ def success_view(request):
 #     return render(request,'home/professional_details.html',context)
 
 def admin_professional(request, faculty_id):
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)
-
+    faculty = get_object_or_404(Faculty_Login, pk=faculty_id)
+    
     if request.method == 'POST':
-        faculty.professionaldetail.designation = request.POST.get('designation')
-        faculty.professionaldetail.highest_qualification = request.POST.get('highest_qualification')
-        faculty.professionaldetail.joining_date = request.POST.get('joining_date')
-        faculty.professionaldetail.leaving_date = request.POST.get('leaving_date')
-        faculty.professionaldetail.languages_known = request.POST.get('languages_known')
-        faculty.professionaldetail.programming_languages = request.POST.get('programming_languages')
-        faculty.professionaldetail.save()
-        return redirect('admin_professional', faculty_id=faculty_id)
-
+        print(request.POST)
+        
+        # Assuming you are passing the username in the POST data
+        username = request.POST.get('username')
+        
+        # Check if the username matches the faculty's username
+        if faculty.username == username:
+            # Check if professionaldetail exists
+            if hasattr(faculty, 'professionaldetail') and faculty.professionaldetail:
+                # Update the professional details
+                faculty.professionaldetail.designation = request.POST.get('designation')
+                faculty.professionaldetail.highest_qualification = request.POST.get('highest_qualification')
+                faculty.professionaldetail.joining_date = request.POST.get('joining_date')
+                
+                # Parse the leaving date properly
+                leaving_date = request.POST.get('leaving_date')
+                if leaving_date:
+                    try:
+                        faculty.professionaldetail.leaving_date = datetime.strptime(leaving_date, '%Y-%m-%d').date()
+                    except ValueError:
+                        # Handle invalid date format
+                        return HttpResponse("Invalid leaving date format. Please use YYYY-MM-DD format.")
+                else:
+                    # If leaving date is empty, set it to None
+                    faculty.professionaldetail.leaving_date = None
+                
+                faculty.professionaldetail.languages_known = request.POST.get('languages_known')
+                faculty.professionaldetail.programming_languages = request.POST.get('programming_languages')
+                faculty.professionaldetail.save()
+            else:
+                # Create a new professional detail instance
+                professional_detail = ProfessionalDetail.objects.create(
+                    user=faculty,
+                    designation=request.POST.get('designation'),
+                    highest_qualification=request.POST.get('highest_qualification'),
+                    joining_date=request.POST.get('joining_date'),
+                    leaving_date=None if not request.POST.get('leaving_date') else datetime.strptime(request.POST.get('leaving_date'), '%Y-%m-%d').date(),
+                    languages_known=request.POST.get('languages_known'),
+                    programming_languages=request.POST.get('programming_languages')
+                )
+            # Redirect to some URL after updating professional details
+            return redirect('admin_professional', faculty_id=faculty_id)
+        else:
+            # Handle the case where the provided username does not match the faculty's username
+            return HttpResponse("Username does not match faculty's username.")
+    
     context = {'faculty': faculty}
     return render(request, 'home/professional_details.html', context)
 
@@ -449,8 +490,12 @@ def admin_awards(request, faculty_id):
                 # Extract the award number from the key
                 award_number = int(key.split('award-name')[1])
 
-                # Get or create the award object
-                award, created = Award.objects.get_or_create(user=faculty)
+                awards = Award.objects.filter(user=faculty, sno=award_number)
+
+                if awards.exists():
+                    award = awards.first()  # Get the first matching award
+                else:
+                    award = Award(user=faculty, sno=award_number)  # Create a new award object
 
                 # Update the award attributes
                 award.awardname = request.POST.get(f'award-name{award_number}')
@@ -475,6 +520,8 @@ def admin_profexp(request, faculty_id):
     if request.method == 'POST':
         # If the request is a POST, it means the form was submitted
         faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+
+        print(request.POST)
 
         # Loop through the submitted data to update professional experience instances
         for key, value in request.POST.items():
@@ -503,11 +550,70 @@ def admin_profexp(request, faculty_id):
         return render(request, 'home/professional_experience.html', context)
 
 def admin_coursestaught(request,faculty_id):
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
-    c_taughts = CoursesTaught.objects.filter(user=faculty)  
-    print(c_taughts)
-    context={'c_taughts':c_taughts,'faculty':faculty}
-    return render(request,'home/courses_taught.html',context)
+    if request.method == 'POST':
+        print(request.POST)
+        # If the request is a POST, it means the form was submitted
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+        for key, value in request.POST.items():
+            if key.startswith('course-id') and value:
+                # Extract the counter from the field name
+                counter = int(key.split('course-id')[1])
+                '''c_taughts, created=CoursesTaught.objects.get_or_create(
+                    course_id_id=request.POST.get(f'course-id{counter}'),
+                    user=faculty
+                )
+                print(c_taughts)
+                print(created)'''
+
+                c_taughts = CoursesTaught.objects.filter(user=faculty, sno=counter)
+
+                if c_taughts.exists():
+                    c_taught = c_taughts.first()  # Get the first matching c_taught
+                else:
+                    c_taught = CoursesTaught(user=faculty, sno=counter)  # Create a new c_taught object
+
+                # Update the award attributes
+                c_taught.course_id_id=request.POST.get(f'course-id{counter}')
+                c_taught.save()
+
+        return redirect('admin_coursestaught',faculty_id=faculty_id)
+
+    else:
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
+        c_taughts = CoursesTaught.objects.filter(user=faculty)
+        context={'c_taughts':c_taughts,'faculty':faculty}
+        return render(request,'home/courses_taught.html',context)
+
+'''def admin_profexp(request, faculty_id):
+    if request.method == 'POST':
+        # If the request is a POST, it means the form was submitted
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+
+        # Loop through the submitted data to update professional experience instances
+        for key, value in request.POST.items():
+            if key.startswith('designation') and value:
+                # Extract the counter from the field name
+                counter = key.split('-')[1]
+                
+                # Get or create professional experience instance
+                prof_exp, created = Professionalexp.objects.get_or_create(
+                    user=faculty,
+                    designation=value,
+                    institution_code=request.POST.get(f'institution-code-{counter}'),
+                    from_date=request.POST.get(f'from-date-{counter}'),
+                    to_date=request.POST.get(f'to-date-{counter}')
+                )
+                # You can add more fields as per your model
+
+        # Redirect back to the admin_profexp view after updating
+        return redirect('admin_profexp', faculty_id=faculty_id)
+    else:
+        # If the request is not a POST, it means the page was accessed via GET
+        # Render the template with the professional experience details
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
+        prof_exp = Professionalexp.objects.filter(user=faculty) 
+        context = {'faculty': faculty, 'prof_exp': prof_exp}
+        return render(request, 'home/professional_experience.html', context)'''
 
 
 def admin_page_filter(request):

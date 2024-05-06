@@ -77,7 +77,8 @@
         }
 
         button[type="submit"] {
-            display: none; /* Initially hide submit button */
+            display: none;
+            /* Initially hide submit button */
             background-color: #007bff;
             color: #fff;
             padding: 12px 20px;
@@ -101,94 +102,90 @@
     </div>
     <div class="container">
         <h2>Courses Taught</h2>
-        <form id="facultyForm" action="/submit-course-details/" method="POST"> <!-- Specify form action -->
+        <form id="coursesForm" action="{% url 'admin_coursestaught' faculty_id=faculty.username %}" method="POST">
+            <!-- Specify form action -->
             {% csrf_token %}
             <div id="courseFields">
                 {% for c_taught in c_taughts %}
-                    <div class="form-group">
-                        <label for="course-id">Course ID:</label>
-                        <div class='form-control'>{{ c_taught.course_id.course_id }}</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="course-name">Course Name:</label>
-                        <div class='form-control'>{{ c_taught.course_id.course_name }}</div>
-                    </div>
+                <div class="form-group">
+                    <label for="course-id">Course ID:</label>
+                    <div class='form-control'>{{ c_taught.course_id.course_id }}</div>
+                </div>
+                <div class="form-group">
+                    <label for="course-name">Course Name:</label>
+                    <div class='form-control'>{{ c_taught.course_id.course_name }}</div>
+                </div>
                 {% endfor %}
             </div>
+            <div id="additionalFields">
+                <!-- Additional input fields will be appended here -->
+            </div>
+            <div id="buttonContainer" class="form-group">
+                <button type="button" onclick="addInputFields()">Add Course</button>
+            </div>
+            <button type="submit" id="submitButton" style="display: none;">Submit</button>
         </form>
-        <div class="form-group">
-            <button type="button" id="addCourse">Add Course</button>
-        </div>
-        <div class="form-group">
-            <button type="submit" id="submitButton">Submit</button>
-        </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const addCourseButton = document.getElementById('addCourse');
-            const submitButton = document.getElementById('submitButton');
-            const courseFields = document.getElementById('courseFields');
-            const facultyForm = document.getElementById('facultyForm');
+        var counter = {{ coursestaughts | length }};
 
-            let courseId = 0;
+        function addInputFields() {
+            var formContainer = document.getElementById('coursesForm');
+            var additionalFieldsContainer = document.getElementById('additionalFields');
+            var formContent = '';
 
-            addCourseButton.addEventListener('click', function () {
-                courseId++;
+            // Increment counter
+            counter++;
 
-                const newCourseFields = `
-                    <div class="form-group">
-                        <label for="course-id-${courseId}">Course ID:</label>
-                        <input type="text" id="course-id-${courseId}" class="form-control" name="course_id_${courseId}">
-                    </div>
-                    <div class="form-group">
-                        <label for="course-name-${courseId}">Course Name:</label>
-                        <input type="text" id="course-name-${courseId}" class="form-control" name="course_name_${courseId}">
-                    </div>
-                `;
+            // Create input fields
+            formContent += '<div class="form-group">';
+            formContent += '<label for="course-id' + counter + '">Course ID:</label>';
+            formContent += '<input type="text" class="form-control" id="course-id' + counter + '" name="course-id' + counter + '">';
+            formContent += '</div>';
 
-                courseFields.insertAdjacentHTML('beforeend', newCourseFields);
-                submitButton.style.display = 'block'; // Show submit button when new fields are added
-            });
+            formContent += '<div class="form-group">';
+            formContent += '<label for="course-name' + counter + '">Course Name:</label>';
+            formContent += '<input type="text" class="form-control" id="course-name' + counter + '" name="course-name' + counter + '">';
+            formContent += '</div>';
 
-            // Handle form submission
-            facultyForm.addEventListener('submit', function (event) {
-                event.preventDefault(); // Prevent default form submission
+            // Append form content to additional fields container
+            additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
 
-                // Collect form data
-                const formData = new FormData(facultyForm);
+            // Display the submit button
+            document.getElementById('submitButton').style.display = 'block';
+        }
 
-                // Convert formData to object
-                const formObject = {};
-                formData.forEach(function (value, key) {
-                    formObject[key] = value;
-                });
+        // Function to handle form submission
+        document.getElementById('coursesForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
 
-                // Send form data to server using AJAX
-                fetch('/submit-course-details/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}' // Ensure CSRF token is sent
-                    },
-                    body: JSON.stringify(formObject)
-                })
+            // Serialize form data
+            var formData = new FormData(this);
+
+            // Send form data via AJAX to Django view for processing
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                }
+            })
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                    if (response.ok) {
+                        alert('Data updated successfully');
+                        location.reload(); // Refresh the page after successful submission
+                    } else {
+                        throw new Error('Failed to update data');
                     }
-                    // Optionally, handle success response
-                    console.log('Form submitted successfully');
-                    // You can redirect or show a success message here
                 })
                 .catch(error => {
-                    // Handle errors
-                    console.error('There was a problem with form submission:', error.message);
-                    // Optionally, display an error message to the user
+                    console.error('Error:', error);
+                    alert('Failed to update data');
                 });
-            });
         });
     </script>
+
 
 </body>
 

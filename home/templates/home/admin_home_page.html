@@ -16,7 +16,7 @@
             background-size: cover;
             background-repeat: no-repeat;
             font-family: Arial,
-            sans-serif;
+                sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
@@ -74,7 +74,7 @@
         .menu-tab {
             position: fixed;
             top: 0;
-            right: -200px;
+            right: -300px;
             width: 200px;
             height: 100%;
             background-color: #333;
@@ -104,6 +104,64 @@
 
         .menu-item input {
             margin-right: 5px;
+        }
+
+        .notification-icon {
+            cursor: pointer;
+            position: fixed;
+            right: 60px;
+            top: 15px;
+            z-index: 1000;
+            color: #fff;
+        }
+
+        .notification-overlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            transform: translate(-50%, -50%);
+            height: 75%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+        }
+
+        .notification-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification-content h2 {
+            margin-bottom: 10px;
+        }
+
+        .notification-item {
+            margin-bottom: 10px;
+        }
+
+        .notification-item a {
+            text-decoration: none;
+        }
+
+        .notification-item button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            color: #333;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .notification-item button:hover {
+            background-color: #f0f0f0;
         }
 
         /* Grid Styles */
@@ -154,7 +212,7 @@
             height: 50px;
             width: 180px;
             display: inline-block;
-            float : right;
+            float: right
         }
 
         .action-button button {
@@ -193,12 +251,33 @@
 <body>
     <header>
         <div class="logo">
-            <img src='{% static "home/college_logo.jpg" %}'' alt="College Logo">
+            <img src='{% static "home/college_logo.jpg" %}' alt="College Logo">
+        </div>
+
+        <div class="menu-icon" onclick="toggleMenu()">
+            ☰
+        </div>
+
+        <div class="notification-icon" onclick="toggleNotifications()">
+            📢
         </div>
     </header>
 
-    <div class="menu-icon" onclick="toggleMenu()">
-        ☰
+    <!-- Notification section -->
+
+    <div class="notification-overlay" id="notificationOverlay">
+        <div class="notification-content">
+            <h2>Notifications</h2>
+            <ul>
+                {% for notification in notifications %}
+                <li class="notification-item">
+                    <a href="{% url 'set_faculty_session_admin' notification.recipient %}">
+                        <button>{{ notification.message }}</button>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
     <div class="menu-tab" id="menuTab">
@@ -272,7 +351,7 @@
 
             <div class="faculty-card">
 
-                <a href="{% url 'set_faculty_session' faculty_login.username %}">
+                <a href="{% url 'set_faculty_session_admin' faculty_login.username %}">
                     <div class="faculty-details">
                         <strong>Username:</strong> {{ faculty_login.username }}<br>
                         {% if faculty_login.personaldetail.first_name %}
@@ -334,11 +413,22 @@
         </div>
     </main> {% endcomment %}
     <script>
-        function toggleMenu() {
-            var menuTab = document.getElementById('menuTab');
-            menuTab.classList.toggle('open');
-            document.body.classList.toggle('opened-menu'); // Toggle class on body
+
+        function toggleNotifications() {
+            var overlay = document.getElementById('notificationOverlay');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
         }
+
+        document.addEventListener('click', function (event) {
+            var overlay = document.getElementById('notificationOverlay');
+            var notificationIcon = document.querySelector('.notification-icon');
+
+            // Check if the click event target is outside the overlay and not the notification icon
+            if (overlay.style.display === 'block' && !overlay.contains(event.target) && event.target !== notificationIcon) {
+                overlay.style.display = 'none'; // Close the overlay
+            }
+        });
+
 
         document.addEventListener('click', function (event) {
             var menuTab = document.getElementById('menuTab');

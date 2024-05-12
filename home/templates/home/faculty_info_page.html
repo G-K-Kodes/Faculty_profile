@@ -1,6 +1,7 @@
 {% load static%}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +16,7 @@
             padding: 0;
             background-color: #f4f4f4;
         }
-        
+
         header {
             background-color: #040266;
             color: #fff;
@@ -23,12 +24,12 @@
             text-align: center;
             position: relative;
         }
-        
+
         .logo img {
             max-width: 100px;
             height: auto;
         }
-        
+
         #editButton {
             position: absolute;
             top: 50%;
@@ -41,7 +42,22 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        
+
+        button {
+            background-color: #22b4d2;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0e699e;
+        }
+
         /* Profile Photo */
         #profilePhoto {
             display: block;
@@ -50,9 +66,10 @@
             max-width: 20%;
             height: auto;
             border-radius: 50%;
-            border: 5px solid #ffffff; /* White border around the photo */
+            border: 5px solid #ffffff;
+            /* White border around the photo */
         }
-        
+
         /* Grid Styles */
         .grid-container {
             display: grid;
@@ -60,9 +77,18 @@
             gap: 20px;
             margin-top: 20px;
             padding: 10px;
-            {% comment %} text-align: center; {% endcomment %}
+
+                {
+                % comment %
+            }
+
+            text-align: center;
+
+                {
+                % endcomment %
+            }
         }
-        
+
         .grid-item {
             background-color: #367fc7;
             color: #fff;
@@ -71,38 +97,109 @@
             text-align: center;
             cursor: pointer;
         }
-        
+
         /* Hover Effect for Grid Items */
         .grid-item:hover {
             background-color: #2a5d8a;
         }
-        
+
         /* Responsive Styles */
         @media (max-width: 768px) {
             header {
                 padding: 15px;
             }
-            
+
             #editButton {
                 top: 10px;
                 right: 10px;
                 padding: 6px 10px;
             }
-            
+
             .grid-container {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
                 gap: 10px;
             }
-            
+
             .grid-item {
                 padding: 15px;
             }
         }
-        
 
+        #alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* semi-transparent black overlay */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+            /* Adjust the padding as needed */
+            box-sizing: border-box;
+            z-index: 9999;
+            /* Ensure it appears above other content */
+        }
 
+        #alert-container {
+            position: relative;
+            /* Ensure positioning is relative */
+        }
+
+        /* Adjust the maximum width as needed */
+
+        .alert {
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background-color: #f8d7da;
+            /* Adjust background color as needed */
+            color: #721c24;
+            /* Adjust text color as needed */
+            text-align: center;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            /* Light green background */
+            color: #155724;
+            /* Dark green text */
+            border: 1px solid #c3e6cb;
+            /* Border color */
+            padding: 10px 15px;
+            /* Padding */
+            margin-bottom: 10px;
+            /* Margin bottom */
+        }
+
+        #progress-bar {
+            height: 4px;
+            background-color: #007bff;
+            /* Adjust the color as needed */
+            width: 0;
+            transition: width 0.1s linear;
+            /* Add smooth transition effect */
+        }
+
+        #close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            z-index: 99999;
+            /* Ensure it appears above other content */
+            color: white;
+            /* Adjust color as needed */
+            background-color: #000;
+            /* Adjust background color as needed */
+            padding: 5px;
+            border-radius: 50%;
+        }
     </style>
-</head> 
+</head>
 
 <body>
     <header>
@@ -110,7 +207,24 @@
             <img src="{% static 'home/college_logo.jpg' %}" alt="College Logo">
         </div>
         <h1>Faculty Details</h1>
-        <button id="editButton">Edit</button>
+        {% if not '/adminlogin/' in request.path %}
+        {% if not faculty.edit_granted %}
+        <form method="post" action="">
+            {% csrf_token %}
+            <button type="submit" name="request_edit_access" id="editAccessButton">Request Edit Access</button>
+        </form>
+        {% else %}
+        <form method="post" action="">
+            {% csrf_token %}
+            <button type="submit" name="accept_changes" id="editAccessButton">Accept Changes</button>
+        </form>
+        {% endif%}
+        {% elif '/adminlogin/' in request.path and not faculty.edit_granted and notification_exists %}
+        <form method="post" action="">
+            {% csrf_token %}
+            <button type="submit" name="handle_pending_request" id="PendingRequest">Accept Edit Access Request</button>
+        </form>
+        {% endif %}
     </header>
     <br><br>
     <main id="mainContent">
@@ -119,28 +233,83 @@
         <!-- Grids -->
         <div class="grid-container">
             {% comment %} <div class="grid-item" onclick="openTab('personal-details')"> {% endcomment %}
+                {% if '/adminlogin/' in request.path %}
+                <a href="{{faculty}}/admin_personal" class='grid-item'>Personal Details</a>
+                <a href="{{faculty}}/admin_academic" class='grid-item'>Academic Info</a>
+                <a href="{{faculty}}/admin_coursestaught" class='grid-item'>Courses Taught</a>
+                <a href="{{faculty}}/admin_professionalexp" class='grid-item'>Professional Experience</a>
+                <a href="{{faculty}}/admin_professional" class='grid-item'>Professional Details</a>
+                <a href="{{faculty}}/admin_awards" class='grid-item'>Awards</a>
+                {% else %}
                 <a href="admin_personal" class='grid-item'>Personal Details</a>
-        
-        
                 <a href="admin_academic" class='grid-item'>Academic Info</a>
-          
-           
                 <a href="admin_coursestaught" class='grid-item'>Courses Taught</a>
-         
-   
                 <a href="admin_professionalexp" class='grid-item'>Professional Experience</a>
-            
-           
                 <a href="admin_professional" class='grid-item'>Professional Details</a>
-           
-            {% comment %} <div class="grid-item" onclick="openTab('research-papers')"> {% endcomment %}
                 <a href="admin_awards" class='grid-item'>Awards</a>
-            {% comment %} </div> {% endcomment %}
-            <!-- <div class="grid-item" onclick="openTab('books-published')">Books Published</div> -->
-            <!-- Add more grid items as needed -->
-        </div>
+                {% endif %}
+
+                {% comment %} <div class="grid-item" onclick="openTab('research-papers')"> {% endcomment %}
+                    {% comment %}
+                </div> {% endcomment %}
+                <!-- <div class="grid-item" onclick="openTab('books-published')">Books Published</div> -->
+                <!-- Add more grid items as needed -->
+            </div>
     </main>
-    <!-- Removed inline script -->
-    <script src="{% static 'js/scripts.js' %}"></script> <!-- External JavaScript file -->
+    {% if messages %}
+    <div id="alert-overlay">
+        <div id="alert-container">
+            <div id="close-button">X</div>
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var alertOverlay = document.getElementById("alert-overlay");
+            var closeButton = document.getElementById("close-button");
+            var progressBar = document.getElementById("progress-bar");
+
+            // Calculate the duration of the timeout
+            var timeoutDuration = 5000; // Adjust as needed
+
+            // Start the timeout
+            var timeoutId = setTimeout(function () {
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            }, timeoutDuration);
+
+            // Close the overlay when the close button is clicked
+            closeButton.addEventListener("click", function () {
+                clearTimeout(timeoutId);
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            });
+
+            // Update the progress bar
+            var startTime = Date.now();
+            var updateProgressBar = function () {
+                var elapsedTime = Date.now() - startTime;
+                var progress = (elapsedTime / timeoutDuration) * 100;
+                progressBar.style.width = progress + "%";
+
+                // Continue updating until the timeout expires
+                if (elapsedTime < timeoutDuration) {
+                    requestAnimationFrame(updateProgressBar);
+                }
+            };
+
+            // Start updating the progress bar
+            updateProgressBar();
+        });
+    </script>
+    {% endif %}
 </body>
+
 </html>

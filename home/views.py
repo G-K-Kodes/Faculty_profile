@@ -103,8 +103,6 @@ def faculty_login(request):
         except Faculty_Login.DoesNotExist:
             return render(request, 'home/flogin.html', {'error_message': 'Invalid username or password'}) 
         
-        print(password) 
-        print(faculty.password)
         if faculty.deleted==False:
             if check_password(password, faculty.password):
                 # Password matches, log the user in
@@ -118,10 +116,7 @@ def faculty_login(request):
             return render(request, 'home/flogin.html', {'error_message': 'User no longer part of this institution'}) 
 
     
-    return render(request, 'home/flogin.html')   
-
-
-
+    return render(request, 'home/flogin.html')
 
 def admin_login(request):
     if request.method == 'POST':
@@ -132,9 +127,6 @@ def admin_login(request):
             admin = User.objects.get(username=username)
         except User.DoesNotExist:
             return render(request, 'home/alogin.html', {'error_message': 'Invalid username or password'}) 
-        
-        print(password) 
-        print(admin.password)
         
         if check_password(password, admin.password):
             # Password matches, log the user in
@@ -151,21 +143,19 @@ def admin_login(request):
 from .models import Faculty_Login  
 
 
-def admin_page(request): 
-
+def admin_page(request):
     # fac_objs = Faculty_Login.objects.all() 
     fac_objs = Faculty_Login.objects.filter(deleted=False)
 
+    notifications = Notification.objects.order_by('-created_at')[:20]
+
     # Pass the queryset to the template context
     context = {
-        'faculty_logins': list(fac_objs)
+        'faculty_logins': list(fac_objs),
+        'notifications': list(notifications)
     }
 
-    # Render the template with the context 
-    print(context['faculty_logins'])
     return render(request,'home/admin_home_page.html',context) 
-
-
 
 
 
@@ -206,12 +196,73 @@ def create_signup(request):
     
 #     return render(request, 'home/faculty_detail.html', {'faculty': faculty})
 
+from .models import Notification
+
 def set_faculty_session(request, faculty_id):
     # Store faculty ID in session
-    request.session['faculty_id'] = faculty_id  
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-    return render(request, 'home/faculty_info_page.html', {'faculty': faculty})  
+    request.session['faculty_id'] = faculty_id
+    faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+    notification_exists = Notification.objects.filter(recipient=faculty_id).exists()
 
+    if request.method == 'POST':
+        # Check if the form was submitted with the request_edit_access button
+        if 'request_edit_access' in request.POST:
+            try:
+                if not faculty.edit_granted:
+                    # Check if edit access is not already granted
+                    if not faculty.edit_request_time:
+                        # Check if there's no previous request time
+                        faculty.edit_request_time = timezone.now()
+                        faculty.save()
+                        messages.success(request, 'Edit access request sent successfully.')
+                        
+                        # Create a notification for the admin about the edit access request
+                        Notification.objects.create(
+                            message=f"Edit access requested by {faculty.personaldetail.first_name} {faculty.personaldetail.last_name}.",
+                            recipient = faculty
+                        )
+                    else:
+                        messages.error(request, 'Edit access request already sent. Please wait for admin response.')
+                else:
+                    messages.error(request, 'Edit access already granted.')
+
+                # Handle other form submissions if needed
+                return redirect('set_faculty_session', faculty_id=faculty_id)
+            except:
+                messages.error(request, 'Failed to update data')
+        
+        
+        elif "handle_pending_request" in request.POST:
+            try:
+                # Retrieve the notification object
+                notification = Notification.objects.get(recipient=faculty_id)
+                
+                # Retrieve the associated faculty login object
+                faculty_login = notification.recipient
+                
+                # Update the faculty login object (example: grant edit permission)
+                faculty_login.edit_granted = True
+                faculty_login.edit_request_time=None
+                faculty_login.save()
+
+                # Delete the notification since the request has been handled
+                notification.delete()
+
+                messages.success(request, 'Edit access request accepted successfully.')
+
+                return redirect('set_faculty_session_admin', faculty_id=faculty_id)
+            except:
+                messages.error(request, 'Failed to update data')
+        
+        elif 'accept_changes' in request.POST:
+            try:
+                faculty.edit_granted = False
+                faculty.save()
+                messages.success(request, 'Changes submitted successfully')
+            except:
+                messages.error(request, 'Failed to update data')
+        
+    return render(request, 'home/faculty_info_page.html', {'faculty': faculty, 'notification_exists': notification_exists})
 
 from django.utils import timezone
 
@@ -225,7 +276,7 @@ def delete_faculty(request,faculty_id):
     p_details.leaving_date=current_date
     faculty.save()  # Save the changes to the faculty instance 
     p_details.save()
-    return redirect('ad_page') 
+    return redirect('ad_page')
     
 
 
@@ -251,7 +302,7 @@ def admin_personal(request,faculty_id):
     # username = request.session.get('username')  
     faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
     context={'faculty':faculty}  
-    if request.method=='POST': 
+    if request.method=='POST':
         digital_id = request.POST.get('digital_id')
         fname = request.POST.get('first_name')
         lname = request.POST.get('last_name')
@@ -302,15 +353,12 @@ def admin_personal(request,faculty_id):
                 blood_grp=blood_grp, 
                 faculty_login=faculty
             ) 
-
         # Save the changes to the database
-        faculty.personaldetail.save() 
-
-     
-
-# Redirect to the admin_personal view with the faculty_id parameter
-        return redirect('set_faculty_session', faculty_id=faculty.username)
-
+        faculty.personaldetail.save()
+        messages.success(request, 'Personal details updated successfully')
+        if 'adminlogin' in request.path:
+            return redirect('faculty_personal', faculty_id=faculty_id)
+        return redirect('admin_personal', faculty_id=faculty_id)
     
     return render(request,'home/personal.html',context) 
 
@@ -348,40 +396,40 @@ def admin_personal(request,faculty_id):
         academic_performances = AcademicPerformance.objects.filter(user=faculty_login)
         return render(request, 'home/academic_performance.html', {'academic_performances': academic_performances})
  """
+
 def admin_academic(request, faculty_id):
     if request.method == 'POST':
-        # Assuming you're passing faculty_id through the URL, retrieve the Faculty object
-        # Replace Faculty with your actual model name for faculty
-        faculty = Faculty_Login.objects.get(username=faculty_id)
+        try:
+            faculty = Faculty_Login.objects.get(username=faculty_id)
+            existing_records = AcademicPerformance.objects.filter(user=faculty)
+            existing_records.order_by('sno')
+            # Loop through the submitted data to update or create AcademicPerformance instances
+            for key, value in request.POST.items():
+                if key.startswith('degree') and value:
+                    # Extract the counter from the field name
+                    counter = key.replace('degree', '')
+                    try:
+                        existing_record=list(existing_records)[int(counter)-1]
+                        existing_record.degree = request.POST.get('degree' + counter)
+                        existing_record.institution_code=request.POST.get('institution-code' + counter)
+                        existing_record.year_of_completion = request.POST.get('year-of-completion' + counter)
+                        existing_record.remark = request.POST.get('remark' + counter)
+                        existing_record.save()
+                    except:
+                        AcademicPerformance.objects.create(
+                            user=faculty,
+                            degree=request.POST.get('degree' + counter),
+                            institution_code=request.POST.get('institution-code' + counter),
+                            year_of_completion=request.POST.get('year-of-completion' + counter),
+                            remark=request.POST.get('remark' + counter)
+                        )
+            messages.success(request, 'Academic performance details updated successfully')
 
-        # Loop through the submitted data to create or update AcademicPerformance instances
-        for key, value in request.POST.items():
-            if key.startswith('degree') and value:
-                # Extract the counter from the field name
-                counter = key.replace('degree', '')
-                print(counter)
-                
-                
-                # Assuming you have a one-to-many relationship between Faculty and AcademicPerformance
-                # Replace academic_performance with the actual related name in your Faculty model
-                academic_performance, created = AcademicPerformance.objects.get_or_create(
-                    user=faculty,
-                    degree=request.POST.get('degree' + counter),
-                    institution_code=request.POST.get('institution-code' + counter),
-                    year_of_completion=request.POST.get('year-of-completion' + counter),
-                    remark=request.POST.get('remark' + counter)
-                )
-                # You can add more fields as per your model
+            return redirect('admin_academic', faculty_id=faculty_id)
+        except:
+            messages.error(request, 'Failed to update data')
 
-        # Optionally, you can add a success message
-        messages.success(request, 'Academic performance details updated successfully')
-        
-        # Redirect back to the same page or any other page as needed
-        return redirect('admin_academic', faculty_id=faculty_id)
-
-    # If the request method is not POST, handle accordingly (perhaps display a form)
     else:
-        # You can handle this part based on your requirements  
         faculty = Faculty_Login.objects.get(username=faculty_id)
         academic = AcademicPerformance.objects.filter(user=faculty)
         context = {'academic': academic, 'faculty': faculty}
@@ -424,51 +472,53 @@ def admin_professional(request, faculty_id):
     faculty = get_object_or_404(Faculty_Login, pk=faculty_id)
     
     if request.method == 'POST':
-        print(request.POST)
-        
-        # Assuming you are passing the username in the POST data
-        username = request.POST.get('username')
-        
-        # Check if the username matches the faculty's username
-        if faculty.username == username:
-            # Check if professionaldetail exists
-            if hasattr(faculty, 'professionaldetail') and faculty.professionaldetail:
-                # Update the professional details
-                faculty.professionaldetail.designation = request.POST.get('designation')
-                faculty.professionaldetail.highest_qualification = request.POST.get('highest_qualification')
-                faculty.professionaldetail.joining_date = request.POST.get('joining_date')
-                
-                # Parse the leaving date properly
-                leaving_date = request.POST.get('leaving_date')
-                if leaving_date:
-                    try:
-                        faculty.professionaldetail.leaving_date = datetime.strptime(leaving_date, '%Y-%m-%d').date()
-                    except ValueError:
-                        # Handle invalid date format
-                        return HttpResponse("Invalid leaving date format. Please use YYYY-MM-DD format.")
+        try:
+            # Assuming you are passing the username in the POST data
+            username = request.POST.get('username')
+            
+            # Check if the username matches the faculty's username
+            if faculty.username == username:
+                # Check if professionaldetail exists
+                if hasattr(faculty, 'professionaldetail') and faculty.professionaldetail:
+                    # Update the professional details
+                    faculty.professionaldetail.designation = request.POST.get('designation')
+                    faculty.professionaldetail.highest_qualification = request.POST.get('highest_qualification')
+                    faculty.professionaldetail.joining_date = request.POST.get('joining_date')
+                    
+                    # Parse the leaving date properly
+                    leaving_date = request.POST.get('leaving_date')
+                    if leaving_date:
+                        try:
+                            faculty.professionaldetail.leaving_date = datetime.strptime(leaving_date, '%Y-%m-%d').date()
+                        except ValueError:
+                            # Handle invalid date format
+                            return HttpResponse("Invalid leaving date format. Please use YYYY-MM-DD format.")
+                    else:
+                        # If leaving date is empty, set it to None
+                        faculty.professionaldetail.leaving_date = None
+                    
+                    faculty.professionaldetail.languages_known = request.POST.get('languages_known')
+                    faculty.professionaldetail.programming_languages = request.POST.get('programming_languages')
+                    faculty.professionaldetail.save()
                 else:
-                    # If leaving date is empty, set it to None
-                    faculty.professionaldetail.leaving_date = None
-                
-                faculty.professionaldetail.languages_known = request.POST.get('languages_known')
-                faculty.professionaldetail.programming_languages = request.POST.get('programming_languages')
-                faculty.professionaldetail.save()
+                    # Create a new professional detail instance
+                    professional_detail = ProfessionalDetail.objects.create(
+                        user=faculty,
+                        designation=request.POST.get('designation'),
+                        highest_qualification=request.POST.get('highest_qualification'),
+                        joining_date=request.POST.get('joining_date'),
+                        leaving_date=None if not request.POST.get('leaving_date') else datetime.strptime(request.POST.get('leaving_date'), '%Y-%m-%d').date(),
+                        languages_known=request.POST.get('languages_known'),
+                        programming_languages=request.POST.get('programming_languages')
+                    )
+                messages.success(request, 'Professional details updated successfully')
+                # Redirect to some URL after updating professional details
+                return redirect('admin_professional', faculty_id=faculty_id)
             else:
-                # Create a new professional detail instance
-                professional_detail = ProfessionalDetail.objects.create(
-                    user=faculty,
-                    designation=request.POST.get('designation'),
-                    highest_qualification=request.POST.get('highest_qualification'),
-                    joining_date=request.POST.get('joining_date'),
-                    leaving_date=None if not request.POST.get('leaving_date') else datetime.strptime(request.POST.get('leaving_date'), '%Y-%m-%d').date(),
-                    languages_known=request.POST.get('languages_known'),
-                    programming_languages=request.POST.get('programming_languages')
-                )
-            # Redirect to some URL after updating professional details
-            return redirect('admin_professional', faculty_id=faculty_id)
-        else:
-            # Handle the case where the provided username does not match the faculty's username
-            return HttpResponse("Username does not match faculty's username.")
+                # Handle the case where the provided username does not match the faculty's username
+                return HttpResponse("Username does not match faculty's username.")
+        except:
+            messages.error(request, 'Failed to update data')
     
     context = {'faculty': faculty}
     return render(request, 'home/professional_details.html', context)
@@ -481,29 +531,33 @@ def admin_professional(request, faculty_id):
 #     return render(request,'home/awards.html',context)
 
 def admin_awards(request, faculty_id):
+
     faculty = get_object_or_404(Faculty_Login, username=faculty_id)
 
     if request.method == 'POST':
-        # Process the form data
-        for key, value in request.POST.items():
-            if key.startswith('award-name') and value.strip():
-                # Extract the award number from the key
-                award_number = int(key.split('award-name')[1])
+        try:
+            # Process the form data
+            for key, value in request.POST.items():
+                if key.startswith('award-name') and value.strip():
+                    # Extract the award number from the key
+                    award_number = int(key.split('award-name')[1])
 
-                awards = Award.objects.filter(user=faculty, sno=award_number)
+                    awards = Award.objects.filter(user=faculty, sno=award_number)
 
-                if awards.exists():
-                    award = awards.first()  # Get the first matching award
-                else:
-                    award = Award(user=faculty, sno=award_number)  # Create a new award object
+                    if awards.exists():
+                        award = awards.first()  # Get the first matching award
+                    else:
+                        award = Award(user=faculty, sno=award_number)  # Create a new award object
 
-                # Update the award attributes
-                award.awardname = request.POST.get(f'award-name{award_number}')
-                award.year_of_rec = request.POST.get(f'year-of-rec{award_number}')
-                award.save()
-
-        # Redirect back to the awards page after saving
-        return redirect('admin_professional', faculty_id=faculty_id)
+                    # Update the award attributes
+                    award.awardname = request.POST.get(f'award-name{award_number}')
+                    award.year_of_rec = request.POST.get(f'year-of-rec{award_number}')
+                    award.save()
+            messages.success(request, 'Award details updated successfully')
+            # Redirect back to the awards page after saving
+            return redirect('admin_awards', faculty_id=faculty_id)
+        except:
+            messages.error(request, 'Failed to update data')
 
     else:
         awards = Award.objects.filter(user=faculty)
@@ -518,102 +572,78 @@ def admin_awards(request, faculty_id):
 
 def admin_profexp(request, faculty_id):
     if request.method == 'POST':
-        # If the request is a POST, it means the form was submitted
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+        try:
+            # If the request is a POST, it means the form was submitted
+            faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+            existing_records=Professionalexp.objects.filter(user=faculty)
+            existing_records.order_by('sno')
 
-        print(request.POST)
+            # Loop through the submitted data to update professional experience instances
+            for key, value in request.POST.items():
+                if key.startswith('designation') and value:
+                    # Extract the counter from the field name
+                    counter = key.split('-')[1]
 
-        # Loop through the submitted data to update professional experience instances
-        for key, value in request.POST.items():
-            if key.startswith('designation') and value:
-                # Extract the counter from the field name
-                counter = key.split('-')[1]
-                
-                # Get or create professional experience instance
-                prof_exp, created = Professionalexp.objects.get_or_create(
-                    user=faculty,
-                    designation=value,
-                    institution_code=request.POST.get(f'institution-code-{counter}'),
-                    from_date=request.POST.get(f'from-date-{counter}'),
-                    to_date=request.POST.get(f'to-date-{counter}')
-                )
-                # You can add more fields as per your model
+                    try:
+                        existing_record=list(existing_records)[int(counter)-1]
+                        existing_record.institution_code=request.POST.get(f'institution-code-{counter}')
+                        existing_record.designation=request.POST.get(f'designation-{counter}')
+                        existing_record.from_date=request.POST.get(f'from-date-{counter}')
+                        existing_record.to_date=request.POST.get(f'to-date-{counter}')
+                        existing_record.save()
+                    except:
+                        Professionalexp.objects.create(
+                            user=faculty,
+                            designation=value,
+                            institution_code=request.POST.get(f'institution-code-{counter}'),
+                            from_date=request.POST.get(f'from-date-{counter}'),
+                            to_date=request.POST.get(f'to-date-{counter}')
+                        )
+            messages.success(request, 'Academic performance details updated successfully')
 
-        # Redirect back to the admin_profexp view after updating
-        return redirect('admin_profexp', faculty_id=faculty_id)
+            # Redirect back to the admin_profexp view after updating
+            return redirect('admin_profexp', faculty_id=faculty_id)
+        except:
+            messages.error(request, 'Failed to update data')
     else:
         # If the request is not a POST, it means the page was accessed via GET
         # Render the template with the professional experience details
         faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
         prof_exp = Professionalexp.objects.filter(user=faculty) 
-        context = {'faculty': faculty, 'prof_exp': prof_exp}
+        context = {'faculty': faculty, 'prof_exp': prof_exp, 'is_admin_login': '/adminlogin/' in request.path}
         return render(request, 'home/professional_experience.html', context)
 
 def admin_coursestaught(request,faculty_id):
     if request.method == 'POST':
-        print(request.POST)
-        # If the request is a POST, it means the form was submitted
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
-        for key, value in request.POST.items():
-            if key.startswith('course-id') and value:
-                # Extract the counter from the field name
-                counter = int(key.split('course-id')[1])
-                '''c_taughts, created=CoursesTaught.objects.get_or_create(
-                    course_id_id=request.POST.get(f'course-id{counter}'),
-                    user=faculty
-                )
-                print(c_taughts)
-                print(created)'''
+        try:
+            # If the request is a POST, it means the form was submitted
+            faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+            for key, value in request.POST.items():
+                if key.startswith('course-id') and value:
+                    # Extract the counter from the field name
+                    counter = int(key.split('course-id')[1])
 
-                c_taughts = CoursesTaught.objects.filter(user=faculty, sno=counter)
+                    c_taughts = CoursesTaught.objects.filter(user=faculty, sno=counter)
 
-                if c_taughts.exists():
-                    c_taught = c_taughts.first()  # Get the first matching c_taught
-                else:
-                    c_taught = CoursesTaught(user=faculty, sno=counter)  # Create a new c_taught object
+                    if c_taughts.exists():
+                        c_taught = c_taughts.first()  # Get the first matching c_taught
+                    else:
+                        c_taught = CoursesTaught(user=faculty, sno=counter)  # Create a new c_taught object
 
-                # Update the award attributes
-                c_taught.course_id_id=request.POST.get(f'course-id{counter}')
-                c_taught.save()
-
-        return redirect('admin_coursestaught',faculty_id=faculty_id)
+                    # Update the award attributes
+                    c_taught.course_id_id=request.POST.get(f'course-id{counter}')
+                    c_taught.save()
+            
+            messages.success(request, 'Courses updated successfully')
+            return redirect('admin_coursestaught',faculty_id=faculty_id)
+        except:
+            messages.error(request, 'Failed to update data')
 
     else:
         faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
         c_taughts = CoursesTaught.objects.filter(user=faculty)
         context={'c_taughts':c_taughts,'faculty':faculty}
         return render(request,'home/courses_taught.html',context)
-
-'''def admin_profexp(request, faculty_id):
-    if request.method == 'POST':
-        # If the request is a POST, it means the form was submitted
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
-
-        # Loop through the submitted data to update professional experience instances
-        for key, value in request.POST.items():
-            if key.startswith('designation') and value:
-                # Extract the counter from the field name
-                counter = key.split('-')[1]
-                
-                # Get or create professional experience instance
-                prof_exp, created = Professionalexp.objects.get_or_create(
-                    user=faculty,
-                    designation=value,
-                    institution_code=request.POST.get(f'institution-code-{counter}'),
-                    from_date=request.POST.get(f'from-date-{counter}'),
-                    to_date=request.POST.get(f'to-date-{counter}')
-                )
-                # You can add more fields as per your model
-
-        # Redirect back to the admin_profexp view after updating
-        return redirect('admin_profexp', faculty_id=faculty_id)
-    else:
-        # If the request is not a POST, it means the page was accessed via GET
-        # Render the template with the professional experience details
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-        prof_exp = Professionalexp.objects.filter(user=faculty) 
-        context = {'faculty': faculty, 'prof_exp': prof_exp}
-        return render(request, 'home/professional_experience.html', context)'''
 
 
 def admin_page_filter(request):

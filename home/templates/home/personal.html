@@ -1,5 +1,5 @@
-
 {% load static %}
+{% load custom_filters %}
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,7 +76,7 @@
             border-color: #007bff;
         }
 
-        button[type="submit"] {
+        button {
             background-color: #007bff;
             color: #fff;
             padding: 12px 20px;
@@ -87,8 +87,45 @@
             transition: background-color 0.3s ease;
         }
 
-        button[type="submit"]:hover {
+        button:hover {
             background-color: #0056b3;
+        }
+
+        button.unavailable {
+            background-color: #D9D9D9;
+            /* Change color to a visually disabled state */
+            cursor: not-allowed;
+            /* Change cursor to indicate unavailability */
+            /* You may adjust other properties as needed */
+        }
+
+        button.unavailable:hover {
+            background-color: #ccc;
+            /* Maintain same color on hover */
+        }
+
+        .tooltip-message {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+        }
+
+        .tooltip-message::after {
+            content: "\26A0";
+            position: absolute;
+            top: -15px;
+            left: calc(50% - 10px);
+            font-size: 20px;
+            color: #ff9800;
+        }
+
+        .tooltip:hover+.tooltip-message {
+            display: block;
         }
     </style>
 </head>
@@ -251,24 +288,93 @@
                 </div>
             </div> 
 
-            <button type="submit" class="edit-button" onclick="enableEdit(this)">Submit</button>
-            
-            
+            <button type="submit" class="edit-button" id="submitButton">Submit</button>
+            <div id="tooltipMessage" class="tooltip-message">Edit access is not given by admin</div>
         </form>
-    </div> 
+    </div>
 
 
     <script>
-        // Function to toggle between displaying data and input fields
-       
-        function enableEdit(button) {
-            var fieldWrapper = button.parentElement;
-            var fieldControl = fieldWrapper.querySelector('.form-control');
-            var fieldInput = fieldWrapper.querySelector('.field-input');
+        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}";
+        var isEditGranted = {{ faculty.edit_granted| lower }};
 
-            fieldControl.style.display = 'none';
-            fieldInput.style.display = 'block';
+        var conditionMet = !isAdminLogin || !isEditGranted;
+
+        // Get the button element and tooltip message element
+        var button1 = document.getElementById("submitButton");
+        var tooltipMessage = document.getElementById("tooltipMessage");
+
+        // Function to update button availability and tooltip message
+        function updateButtonAvailability() {
+            if (conditionMet) {
+                // If condition is met, make the button unavailable
+                button1.classList.add("unavailable");
+                button1.disabled = true;
+                tooltipMessage.style.display = "block"; 
+            } else {
+                // If condition is not met, make the button available
+                button1.classList.remove("unavailable");
+                button1.disabled = false;
+                tooltipMessage.style.display = "none";
+            }
         }
+
+        // Call the function initially to set the button's initial state
+        updateButtonAvailability();
     </script>
+    {% if messages %}
+    <div id="alert-overlay">
+        <div id="alert-container">
+            <div id="close-button">X</div>
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var alertOverlay = document.getElementById("alert-overlay");
+            var closeButton = document.getElementById("close-button");
+            var progressBar = document.getElementById("progress-bar");
+
+            // Calculate the duration of the timeout
+            var timeoutDuration = 5000; // Adjust as needed
+
+            // Start the timeout
+            var timeoutId = setTimeout(function () {
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            }, timeoutDuration);
+
+            // Close the overlay when the close button is clicked
+            closeButton.addEventListener("click", function () {
+                clearTimeout(timeoutId);
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            });
+
+            // Update the progress bar
+            var startTime = Date.now();
+            var updateProgressBar = function () {
+                var elapsedTime = Date.now() - startTime;
+                var progress = (elapsedTime / timeoutDuration) * 100;
+                progressBar.style.width = progress + "%";
+
+                // Continue updating until the timeout expires
+                if (elapsedTime < timeoutDuration) {
+                    requestAnimationFrame(updateProgressBar);
+                }
+            };
+
+            // Start updating the progress bar
+            updateProgressBar();
+        });
+    </script>
+    {% endif %}
 </body>
 </html> 

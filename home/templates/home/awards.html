@@ -1,186 +1,357 @@
 {% load static %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Faculty Awards Details</title>
-   <style>
-       body {
-           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-           margin: 0;
-           padding: 0;
-           background-color: #f9f9f9;
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Awards Details</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
 
-       .navbar {
-           background-color: #007bff;
-           padding: 10px 20px;
-           display: flex;
-           align-items: center;
-           justify-content: space-between;
-       }
+        .navbar {
+            background-color: #007bff;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-       .navbar img {
-           height: 30px;
-           vertical-align: middle;
-           margin-right: 10px;
-       }
+        .navbar img {
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
 
-       .navbar a {
-           color: #fff;
-           text-decoration: none;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .container {
-           width: 80%;
-           margin: 50px auto;
-           background-color: #fff;
-           padding: 30px;
-           border-radius: 10px;
-           box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-       }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
 
-       h2 {
-           text-align: center;
-           color: #333;
-           margin-bottom: 30px;
-       }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
 
-       .form-group {
-           margin-bottom: 20px;
-       }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-       label {
-           display: block;
-           margin-bottom: 5px;
-           color: #555;
-           font-size: 16px;
-           font-weight: bold;
-       }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-       .form-control {
-           width: calc(100% - 24px);
-           padding: 12px;
-           border: 1px solid #ccc;
-           border-radius: 5px;
-           font-size: 16px;
-           transition: border-color 0.3s ease;
-       }
+        .form-control {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
 
-       .form-control:focus {
-           outline: none;
-           border-color: #007bff;
-       }
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
 
-       button[type="button"] {
-           background-color: #007bff;
-           color: #fff;
-           padding: 12px 20px;
-           border: none;
-           border-radius: 5px;
-           font-size: 16px;
-           cursor: pointer;
-           transition: background-color 0.3s ease;
-       }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-       button[type="button"]:hover {
-           background-color: #0056b3;
-       }
-   </style>
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.unavailable {
+            background-color: #D9D9D9;
+            /* Change color to a visually disabled state */
+            cursor: not-allowed;
+            /* Change cursor to indicate unavailability */
+            /* You may adjust other properties as needed */
+        }
+
+        button.unavailable:hover {
+            background-color: #ccc;
+            /* Maintain same color on hover */
+        }
+
+        .tooltip-message {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+        }
+
+        .tooltip-message::after {
+            content: "\26A0";
+            position: absolute;
+            top: -15px;
+            left: calc(50% - 10px);
+            font-size: 20px;
+            color: #ff9800;
+        }
+
+        .tooltip:hover+.tooltip-message {
+            display: block;
+        }
+
+        #alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* semi-transparent black overlay */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+            /* Adjust the padding as needed */
+            box-sizing: border-box;
+            z-index: 9999;
+            /* Ensure it appears above other content */
+        }
+
+        #alert-container {
+            position: relative;
+            /* Ensure positioning is relative */
+        }
+
+        /* Adjust the maximum width as needed */
+
+        .alert {
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background-color: #f8d7da;
+            /* Adjust background color as needed */
+            color: #721c24;
+            /* Adjust text color as needed */
+            text-align: center;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            /* Light green background */
+            color: #155724;
+            /* Dark green text */
+            border: 1px solid #c3e6cb;
+            /* Border color */
+            padding: 10px 15px;
+            /* Padding */
+            margin-bottom: 10px;
+            /* Margin bottom */
+        }
+
+        #progress-bar {
+            height: 4px;
+            background-color: #007bff;
+            /* Adjust the color as needed */
+            width: 0;
+            transition: width 0.1s linear;
+            /* Add smooth transition effect */
+        }
+
+        #close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            z-index: 99999;
+            /* Ensure it appears above other content */
+            color: white;
+            /* Adjust color as needed */
+            background-color: #000;
+            /* Adjust background color as needed */
+            padding: 5px;
+            border-radius: 50%;
+        }
+    </style>
 </head>
+
 <body>
-   <div class="navbar">
-       <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
-       <a href="#">Back</a>
-   </div>
-   <div class="container">
-       <h2>Awards</h2>
-       {% if error_message %}
-       <div class="alert alert-danger" role="alert">
-           {{ error_message }}
-       </div>
-       {% endif %}
-       <form id="awardsForm" method="POST" action="{% url 'admin_awards' faculty_id=faculty.username %}">
-           {% csrf_token %}
-           {% for award in awards %}
-           <div class="form-group">
-               <label for="award-name{{ forloop.counter }}">Name of the award:</label>
-               <input type="text" class="form-control" id="award-name{{ forloop.counter }}" name="award-name{{ forloop.counter }}" value="{{ award.awardname }}">
-           </div>
-           <div class="form-group">
-               <label for="year-of-rec{{ forloop.counter }}">Year received:</label>
-               <input type="date" class="form-control" id="year-of-rec{{ forloop.counter }}" name="year-of-rec{{ forloop.counter }}" value="{{ award.year_of_rec|date:'Y-m-d' }}">
-           </div>
-           {% endfor %}
-           <div id="additionalFields">
-               <!-- Additional input fields will be appended here -->
-           </div>
-           <div id="buttonContainer" class="form-group">
-               <button type="button" onclick="addInputFields()">Add Award</button>
-           </div>
-           <button type="submit" id="submitButton" style="display: none;">Submit</button>
-       </form>
-   </div>
-   <script>
-       var counter = {{ awards|length }};
+    <div class="navbar">
+        <img src='{% static "home/college_logo.jpg" %}' alt="SSN Logo">
+        <a href="#">Back</a>
+    </div>
+    <div class="container">
+        <h2>Awards</h2>
+        {% if error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        <form id="awardsForm" method="POST" action="{% url 'admin_awards' faculty_id=faculty.username %}">
+            {% csrf_token %}
+            {% for award in awards %}
+            <div class="form-group">
+                <label for="award-name{{ forloop.counter }}">Name of the award:</label>
+                <input type="text" class="form-control" id="award-name{{ forloop.counter }}"
+                    name="award-name{{ forloop.counter }}" value="{{ award.awardname }}">
+            </div>
+            <div class="form-group">
+                <label for="year-of-rec{{ forloop.counter }}">Year received:</label>
+                <input type="date" class="form-control" id="year-of-rec{{ forloop.counter }}"
+                    name="year-of-rec{{ forloop.counter }}" value="{{ award.year_of_rec|date:'Y-m-d' }}">
+            </div>
+            {% endfor %}
+            <div id="additionalFields">
+                <!-- Additional input fields will be appended here -->
+            </div>
+            <button type="button" id="addfields" onclick="addInputFields()">Add Award</button>
+            <div id="tooltipMessage1" class="tooltip-message">Edit access is not given by admin</div>
+            <button type="submit" id="submitButton">Submit</button>
+        </form>
+    </div>
+    <script>
+        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}";
+        var isEditGranted = {{ faculty.edit_granted| lower }};
 
-       function addInputFields() {
-           var formContainer = document.getElementById('awardsForm');
-           var additionalFieldsContainer = document.getElementById('additionalFields');
-           var formContent = '';
+        var conditionMet = !isAdminLogin || !isEditGranted;
 
-           // Increment counter
-           counter++;
+        // Get the button element and tooltip message element
+        var button1 = document.getElementById("submitButton");
+        var button2 = document.getElementById("addfields")
+        var tooltipMessage1 = document.getElementById("tooltipMessage1");
 
-           // Create input fields
-           formContent += '<div class="form-group">';
-           formContent += '<label for="award-name' + counter + '">Name of the award:</label>';
-           formContent += '<input type="text" class="form-control" id="award-name' + counter + '" name="award-name' + counter + '">';
-           formContent += '</div>';
+        // Function to update button availability and tooltip message
+        function updateButtonAvailability() {
+            if (conditionMet) {
+                // If condition is met, make the button unavailable
+                button1.classList.add("unavailable");
+                button1.disabled = true;
+                button2.classList.add("unavailable");
+                button2.disabled = true; // Disable the button for better accessibility
+                tooltipMessage1.style.display = "block";
+            } else {
+                // If condition is not met, make the button available
+                button1.classList.remove("unavailable");
+                button1.disabled = false;
+                button1.classList.remove("unavailable");
+                button1.disabled = false; // Enable the button
+                tooltipMessage1.style.display = "none";
+            }
+        }
 
-           formContent += '<div class="form-group">';
-           formContent += '<label for="year-of-rec' + counter + '">Year received:</label>';
-           formContent += '<input type="date" class="form-control" id="year-of-rec' + counter + '" name="year-of-rec' + counter + '">';
-           formContent += '</div>';
+        // Call the function initially to set the button's initial state
+        updateButtonAvailability();
 
-           // Append form content to additional fields container
-           additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
+        var counter = {{ awards| length }};
 
-           // Display the submit button
-           document.getElementById('submitButton').style.display = 'block';
-       }
+        function addInputFields() {
+            var formContainer = document.getElementById('awardsForm');
+            var additionalFieldsContainer = document.getElementById('additionalFields');
+            var formContent = '';
 
-       // Function to handle form submission
-       document.getElementById('awardsForm').addEventListener('submit', function (event) {
-           event.preventDefault(); // Prevent default form submission
+            // Increment counter
+            counter++;
 
-           // Serialize form data
-           var formData = new FormData(this);
+            // Create input fields
+            formContent += '<div class="form-group">';
+            formContent += '<label for="award-name' + counter + '">Name of the award:</label>';
+            formContent += '<input type="text" class="form-control" id="award-name' + counter + '" name="award-name' + counter + '">';
+            formContent += '</div>';
 
-           // Send form data via AJAX to Django view for processing
-           fetch(this.action, {
-               method: 'POST',
-               body: formData,
-               headers: {
-                   'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
-               }
-           })
-               .then(response => {
-                   if (response.ok) {
-                       alert('Data updated successfully');
-                       location.reload(); // Refresh the page after successful submission
-                   } else {
-                       throw new Error('Failed to update data');
-                   }
-               })
-               .catch(error => {
-                   console.error('Error:', error);
-                   alert('Failed to update data');
-               });
-       });
-   </script>
+            formContent += '<div class="form-group">';
+            formContent += '<label for="year-of-rec' + counter + '">Year received:</label>';
+            formContent += '<input type="date" class="form-control" id="year-of-rec' + counter + '" name="year-of-rec' + counter + '">';
+            formContent += '</div>';
+
+            // Append form content to additional fields container
+            additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
+        };
+    </script>
+    {% if messages %}
+    <div id="alert-overlay">
+        <div id="alert-container">
+            <div id="close-button">X</div>
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var alertOverlay = document.getElementById("alert-overlay");
+            var closeButton = document.getElementById("close-button");
+            var progressBar = document.getElementById("progress-bar");
+
+            // Calculate the duration of the timeout
+            var timeoutDuration = 5000; // Adjust as needed
+
+            // Start the timeout
+            var timeoutId = setTimeout(function () {
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            }, timeoutDuration);
+
+            // Close the overlay when the close button is clicked
+            closeButton.addEventListener("click", function () {
+                clearTimeout(timeoutId);
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            });
+
+            // Update the progress bar
+            var startTime = Date.now();
+            var updateProgressBar = function () {
+                var elapsedTime = Date.now() - startTime;
+                var progress = (elapsedTime / timeoutDuration) * 100;
+                progressBar.style.width = progress + "%";
+
+                // Continue updating until the timeout expires
+                if (elapsedTime < timeoutDuration) {
+                    requestAnimationFrame(updateProgressBar);
+                }
+            };
+
+            // Start updating the progress bar
+            updateProgressBar();
+        });
+    </script>
+    {% endif %}
 </body>
+
 </html>

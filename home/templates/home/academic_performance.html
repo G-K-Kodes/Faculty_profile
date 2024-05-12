@@ -1,4 +1,6 @@
 {% load static %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -76,7 +78,7 @@
             border-color: #007bff;
         }
 
-        button[type="button"] {
+        button {
             background-color: #007bff;
             color: #fff;
             padding: 12px 20px;
@@ -87,8 +89,119 @@
             transition: background-color 0.3s ease;
         }
 
-        button[type="button"]:hover {
+        button:hover {
             background-color: #0056b3;
+        }
+
+        button.unavailable {
+            background-color: #D9D9D9;
+            /* Change color to a visually disabled state */
+            cursor: not-allowed;
+            /* Change cursor to indicate unavailability */
+            /* You may adjust other properties as needed */
+        }
+
+        button.unavailable:hover {
+            background-color: #ccc;
+            /* Maintain same color on hover */
+        }
+
+        .tooltip-message {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+        }
+
+        .tooltip-message::after {
+            content: "\26A0";
+            position: absolute;
+            top: -15px;
+            left: calc(50% - 10px);
+            font-size: 20px;
+            color: #ff9800;
+        }
+
+        .tooltip:hover+.tooltip-message {
+            display: block;
+        }
+
+        #alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* semi-transparent black overlay */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+            /* Adjust the padding as needed */
+            box-sizing: border-box;
+            z-index: 9999;
+            /* Ensure it appears above other content */
+        }
+
+        #alert-container {
+            position: relative;
+            /* Ensure positioning is relative */
+        }
+
+        /* Adjust the maximum width as needed */
+
+        .alert {
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background-color: #f8d7da;
+            /* Adjust background color as needed */
+            color: #721c24;
+            /* Adjust text color as needed */
+            text-align: center;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            /* Light green background */
+            color: #155724;
+            /* Dark green text */
+            border: 1px solid #c3e6cb;
+            /* Border color */
+            padding: 10px 15px;
+            /* Padding */
+            margin-bottom: 10px;
+            /* Margin bottom */
+        }
+
+        #progress-bar {
+            height: 4px;
+            background-color: #007bff;
+            /* Adjust the color as needed */
+            width: 0;
+            transition: width 0.1s linear;
+            /* Add smooth transition effect */
+        }
+
+        #close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            z-index: 99999;
+            /* Ensure it appears above other content */
+            color: white;
+            /* Adjust color as needed */
+            background-color: #000;
+            /* Adjust background color as needed */
+            padding: 5px;
+            border-radius: 50%;
         }
     </style>
 </head>
@@ -105,7 +218,8 @@
             {{ error_message }}
         </div>
         {% endif %}
-        <form id="academicPerformanceForm" method='POST' action="{% url 'admin_academic' faculty_id=faculty.username %}">
+        <form id="academicPerformanceForm" method='POST'
+            action="{% url 'admin_academic' faculty_id=faculty.username %}">
             {% csrf_token %}
             {% for performance in academic %}
             <div class="form-group">
@@ -119,9 +233,10 @@
                     name="institution-code{{ forloop.counter }}" value="{{ performance.institution_code }}">
             </div>
             <div class="form-group">
-                <label for="year-of-completion{{ forloop.counter }}">Year of Completion:</label> 
+                <label for="year-of-completion{{ forloop.counter }}">Year of Completion:</label>
                 {% with parsed_date=performance.year_of_completion|date:"Y-m-d" %}
-                <input type="date" class="form-control" id="year-of-completion{{ forloop.counter }}" name="year-of-completion{{ forloop.counter }}" value="{{ parsed_date }}">
+                <input type="date" class="form-control" id="year-of-completion{{ forloop.counter }}"
+                    name="year-of-completion{{ forloop.counter }}" value="{{ parsed_date }}">
                 {% endwith %}
 
                 <!-- <input type="date" class="form-control" id="year-of-completion{{ forloop.counter }}"
@@ -136,13 +251,48 @@
             <div id="additionalFields">
                 <!-- Additional input fields will be appended here -->
             </div>
-            <div id="buttonContainer" class="form-group">
-                <button type="button" onclick="addInputFields()">Add Input Fields</button>
-            </div>
-            <button type="submit" id="submitButton" style="display: none;">Submit</button>
+            <button type="button" class="tooltip" id="addfields" onclick="addInputFields()">Add Input Fields</button>
+            <div id="tooltipMessage1" class="tooltip-message">Edit access is not given by admin</div>
+            <button type="submit" class="tooltip" id="submitButton">Submit</button>
+            <div id="tooltipMessage2" class="tooltip-message">Edit access is not given by admin</div>
         </form>
     </div>
     <script>
+        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}";
+        var isEditGranted = {{ faculty.edit_granted| lower }};
+
+        var conditionMet = !isAdminLogin || !isEditGranted;
+
+        // Get the button element and tooltip message element
+        var button1 = document.getElementById("submitButton");
+        var button2 = document.getElementById("addfields")
+        var tooltipMessage1 = document.getElementById("tooltipMessage1");
+        var tooltipMessage2 = document.getElementById("tooltipMessage2");
+
+        // Function to update button availability and tooltip message
+        function updateButtonAvailability() {
+            if (conditionMet) {
+                // If condition is met, make the button unavailable
+                button1.classList.add("unavailable");
+                button1.disabled = true;
+                button2.classList.add("unavailable");
+                button2.disabled = true; // Disable the button for better accessibility
+                tooltipMessage1.style.display = "block"; 
+                tooltipMessage2.style.display = "block"; 
+            } else {
+                // If condition is not met, make the button available
+                button1.classList.remove("unavailable");
+                button1.disabled = false;
+                button1.classList.remove("unavailable");
+                button1.disabled = false; // Enable the button
+                tooltipMessage1.style.display = "none"; 
+                tooltipMessage2.style.display = "none"; 
+            }
+        }
+
+        // Call the function initially to set the button's initial state
+        updateButtonAvailability();
+
         var counter = {{ academic| length }};
 
         function addInputFields() {
@@ -177,39 +327,62 @@
             // Append form content to additional fields container
             additionalFieldsContainer.insertAdjacentHTML('beforeend', formContent);
 
-            // Display the submit button
-            document.getElementById('submitButton').style.display = 'block';
-        }
+        };
+    </script>
+    {% if messages %}
+    <div id="alert-overlay">
+        <div id="alert-container">
+            <div id="close-button">X</div>
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var alertOverlay = document.getElementById("alert-overlay");
+            var closeButton = document.getElementById("close-button");
+            var progressBar = document.getElementById("progress-bar");
 
-        // Function to handle form submission
-        document.getElementById('academicPerformanceForm').addEventListener('submit', function (event) {
-            event.preventDefault(); // Prevent default form submission
+            // Calculate the duration of the timeout
+            var timeoutDuration = 5000; // Adjust as needed
 
-            // Serialize form data
-            var formData = new FormData(this);
+            // Start the timeout
+            var timeoutId = setTimeout(function () {
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            }, timeoutDuration);
 
-            // Send form data via AJAX to Django view for processing
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+            // Close the overlay when the close button is clicked
+            closeButton.addEventListener("click", function () {
+                clearTimeout(timeoutId);
+                alertOverlay.style.opacity = "0";
+                setTimeout(function () {
+                    alertOverlay.remove();
+                }, 500); // Adjust the time (in milliseconds) as needed
+            });
+
+            // Update the progress bar
+            var startTime = Date.now();
+            var updateProgressBar = function () {
+                var elapsedTime = Date.now() - startTime;
+                var progress = (elapsedTime / timeoutDuration) * 100;
+                progressBar.style.width = progress + "%";
+
+                // Continue updating until the timeout expires
+                if (elapsedTime < timeoutDuration) {
+                    requestAnimationFrame(updateProgressBar);
                 }
-            })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Data updated successfully');
-                        location.reload(); // Refresh the page after successful submission
-                    } else {
-                        throw new Error('Failed to update data');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to update data');
-                });
+            };
+
+            // Start updating the progress bar
+            updateProgressBar();
         });
     </script>
+    {% endif %}
 
 </body>
 

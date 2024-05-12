@@ -282,23 +282,10 @@ class Profile(models.Model):
     def __str__(self):
         return f'{self.user.username} Profile'
     
+class Notification(models.Model):
+    message = models.CharField(max_length=255)
+    created_at = models.DateTimeField(default=timezone.now)
+    recipient = models.ForeignKey(Faculty_Login, on_delete=models.CASCADE)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-    
-
+    def __str__(self):
+        return f"{self.recipient.username} - {self.message}"

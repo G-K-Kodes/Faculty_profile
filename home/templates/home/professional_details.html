@@ -317,10 +317,9 @@
     </script>
     {% endif %}
     <script>
-        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}";
-        var isEditGranted = {{ faculty.edit_granted| lower }};
-
-        var conditionMet = !isAdminLogin || !isEditGranted;
+        var isAdminLogin = {{ request.path|contains:'/adminlogin/'|yesno:"true,false" }}
+        var isEditGranted = {{ faculty.edit_granted|yesno:"true,false" }};
+        var conditionMet = !(isAdminLogin || isEditGranted);
 
         // Get the button element and tooltip message element
         var button1 = document.getElementById("submitButton");

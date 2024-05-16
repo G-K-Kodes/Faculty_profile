@@ -1,100 +1,42 @@
 
-# Create your views here.
-from django.shortcuts import render,HttpResponse,redirect 
-from django.contrib.auth.forms import UserCreationForm  
-from .models import Faculty_Login,ProfessionalDetail,Award,AcademicPerformance,Professionalexp,Profile,Course,CoursesTaught,PersonalDetail
-from django.contrib.auth.hashers import make_password,check_password   
-from django.contrib.auth.models import User 
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from django.urls import reverse
+from django.views import View
+from datetime import datetime
 from django.contrib.auth.hashers import check_password
-from django.urls import reverse  
-from django.shortcuts import render, get_object_or_404 
-from datetime import datetime  
-# from .models import Archive
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.contrib.sessions.models import Session
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-
-
-
-# posts=[{
-#     'id':1,
-#     'name':'karna', 
-#     'context':'1st post'
-# },
-# {
-#     'id':2,
-#     'name':'jarna', 
-#     'context':'2nt post'
-
-# },
-# { 
-#     'id':3,
-#     'name':'surna', 
-#     'context':'3rt post'
-
-# }
-# ]
-
-# views.py
-from django.http import HttpResponse, Http404
-from django.template.loader import get_template
-from django_xhtml2pdf.utils import generate_pdf
-
-'''def generate_report(request, username):
-    try:
-        faculty = Faculty_Login.objects.get(username=username)
-    except Faculty_Login.DoesNotExist:
-        raise Http404("Faculty with the provided username does not exist.")
-
-    # Prepare data for the report template
-    report_data = {
-        'faculty': {
-            'username': faculty.username,
-            'personaldetail': {
-                'first_name': faculty.personaldetail.first_name,
-                'last_name': faculty.personaldetail.last_name,
-                'dob': faculty.personaldetail.dob,
-                'contact_no': faculty.personaldetail.contact_no,
-                'address': faculty.personaldetail.address,
-                'email_id': faculty.personaldetail.email_id,
-                'aicte_id': faculty.personaldetail.aicte_id,
-                'blood_grp': faculty.personaldetail.get_blood_grp_display(),
-            },
-            'professionaldetail': {
-                'designation': faculty.professionaldetail.designation,
-                'highest_qualification': faculty.professionaldetail.get_highest_qualification_display(),
-                'joining_date': faculty.professionaldetail.joining_date,
-                'years_of_experience': faculty.professionaldetail.years_of_experience,
-                'languages_known': faculty.professionaldetail.languages_known,
-                'programming_languages': faculty.professionaldetail.programming_languages,
-            },
-            # Add other details as needed
-        }
-    }
-
-    # Render the template
-    template = get_template('home/report_template.html')
-    html_content = template.render(report_data)
-
-    # Generate PDF from HTML content
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{faculty.username}_report.pdf"'
-    generate_pdf(html_content, response)
-
-    return response'''
-
+from.models import Faculty_Login,ProfessionalDetail,Award,AcademicPerformance,Professionalexp,Profile,Course,CoursesTaught,PersonalDetail,Notification
 
 def home(request):
-   
-    return render(request,'home/home_kamesh.html')
-# def about(request): 
-#     content={'title':'about bro'}
-#     return render(request,'home/about.html',content) 
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            view=AdminPageView
+            return view.get(view, request)
+        view=SetFacultySessionView
+        return view.get(view,request,faculty_id=request.user.username)
+    return render(request, 'home/home_kamesh.html')
 
-def register(request):
-    form=UserCreationForm() 
-    return render(request,'') 
+def logout_view(request):
+    logout(request)
+    # Redirect to the appropriate page after logout
+    return redirect(home)
 
-def faculty_login(request):
-    if request.method == 'POST':
+class StaffRequiredMixin:
+    @classmethod
+    def as_view(cls, **kwargs):
+        view = super().as_view(**kwargs)
+        return staff_member_required(view)
+
+class FacultyLoginView(View):
+    def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         
@@ -104,22 +46,29 @@ def faculty_login(request):
             return render(request, 'home/flogin.html', {'error_message': 'Invalid username or password'}) 
         
         if faculty.deleted==False:
-            if check_password(password, faculty.password):
-                # Password matches, log the user in
-                request.session['user_id'] = faculty.username
-                # Redirect to a page after successful login
-                return redirect(f'/{username}')  # Assuming 'about' is the name of the URL pattern for the about page
+            user = authenticate(request, username=username, password=password)
+            print(user)
+            if user is not None:
+                # Check if user is already logged in from another session
+                active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=user.id)
+                for session in active_sessions:
+                    # Delete the session if found
+                    session.delete()
+
+                # Login user
+                login(request, user)
+                return redirect(f'/{username}')    # Assuming 'about' is the name of the URL pattern for the about page
             else:
                 # Password doesn't match
                 return render(request, 'home/flogin.html', {'error_message': 'Invalid username or password'}) 
         else:
             return render(request, 'home/flogin.html', {'error_message': 'User no longer part of this institution'}) 
-
     
-    return render(request, 'home/flogin.html')
-
-def admin_login(request):
-    if request.method == 'POST':
+    def get(self, request):
+        return render(request, 'home/flogin.html')
+    
+class AdminLoginView(View):
+    def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         
@@ -130,40 +79,46 @@ def admin_login(request):
         
         if check_password(password, admin.password):
             # Password matches, log the user in
-            request.session['user_id'] = admin.username
+            active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=admin.id)
+            
+            for session in active_sessions:
+                # Delete the session if found
+                session.delete()
+
+            # Log the user in
+            login(request, admin)
+
             # Redirect to a page after successful login
-            return redirect('/adminlogin/admin_page')  # Assuming 'about' is the name of the URL pattern for the about page
+            return redirect('/adminlogin/admin_page')
         else:
             # Password doesn't match
             return render(request, 'home/alogin.html', {'error_message': 'Invalid username or password'})
+        
+    def get(self, request):
+        return render(request, 'home/alogin.html')
+
+class AdminPageView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+             return render(request, 'home/forbidden.html', status=403)
+        
+        fac_objs = Faculty_Login.objects.filter(deleted=False)
+
+        notifications = Notification.objects.order_by('-created_at')[:20]
+
+        # Pass the queryset to the template context
+        context = {
+            'faculty_logins': list(fac_objs),
+            'notifications': list(notifications)
+        }
+
+        return render(request,'home/admin_home_page.html',context)
+
+class CreateSignupView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'home/create_signup.html')
     
-    return render(request, 'home/alogin.html')  
-
-
-from .models import Faculty_Login  
-
-
-def admin_page(request):
-    # fac_objs = Faculty_Login.objects.all() 
-    fac_objs = Faculty_Login.objects.filter(deleted=False)
-
-    notifications = Notification.objects.order_by('-created_at')[:20]
-
-    # Pass the queryset to the template context
-    context = {
-        'faculty_logins': list(fac_objs),
-        'notifications': list(notifications)
-    }
-
-    return render(request,'home/admin_home_page.html',context) 
-
-
-
-from django.shortcuts import render, redirect
-from .models import Faculty_Login
-
-def create_signup(request):
-    if request.method == 'POST':
+    def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
@@ -172,40 +127,24 @@ def create_signup(request):
         
         if username and password:
             Faculty_Login.objects.create(username=username, password=password)
-
-            
+            User.objects.create(username=username, password=password, is_staff=False)
             # create professionaldetail obj
             return redirect('adminlogin/admin_page')  # Redirect to a success page
         else:
             return render(request, 'home/create_signup.html', {'error': 'Please provide both username and password.'})
-    return render(request, 'home/create_signup.html')
-    
 
-
-# def faculty_detail(request):
-#     # Retrieve faculty ID from session
-#     faculty_id = request.session.get('faculty_id')
-#     if faculty_id is None:
-#         # Redirect or handle the case where no faculty ID is found in the session
-#         pass
-
-#     # Fetch faculty details by ID 
-    
-#     faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-#     print(faculty)
-    
-#     return render(request, 'home/faculty_detail.html', {'faculty': faculty})
-
-from .models import Notification
-
-def set_faculty_session(request, faculty_id):
-    # Store faculty ID in session
-    request.session['faculty_id'] = faculty_id
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)
-    notification_exists = Notification.objects.filter(recipient=faculty_id).exists()
-
-    if request.method == 'POST':
-        # Check if the form was submitted with the request_edit_access button
+class SetFacultySessionView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        request.session['faculty_id'] = faculty_id
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+        if request.user.is_staff:
+            notification_exists = Notification.objects.filter(recipient=faculty_id).exists()
+            return render(request, 'home/faculty_info_page.html', {'faculty': faculty, 'notification_exists': notification_exists})
+        return render(request, 'home/faculty_info_page.html', {'faculty': faculty})
+        
+    def post(self, request, faculty_id):
+        request.session['faculty_id'] = faculty_id
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
         if 'request_edit_access' in request.POST:
             try:
                 if not faculty.edit_granted:
@@ -243,6 +182,9 @@ def set_faculty_session(request, faculty_id):
                 # Update the faculty login object (example: grant edit permission)
                 faculty_login.edit_granted = True
                 faculty_login.edit_request_time=None
+                faculty_login.edit_grant_time=timezone.now()
+                expiry_delta = datetime.timedelta(hours=23, minutes=59, seconds=59)
+                faculty_login.edit_expiry_time = faculty_login.edit_grant_time + expiry_delta
                 faculty_login.save()
 
                 # Delete the notification since the request has been handled
@@ -253,56 +195,42 @@ def set_faculty_session(request, faculty_id):
                 return redirect('set_faculty_session_admin', faculty_id=faculty_id)
             except:
                 messages.error(request, 'Failed to update data')
-        
-        elif 'accept_changes' in request.POST:
-            try:
-                faculty.edit_granted = False
-                faculty.save()
-                messages.success(request, 'Changes submitted successfully')
-            except:
-                messages.error(request, 'Failed to update data')
-        
-    return render(request, 'home/faculty_info_page.html', {'faculty': faculty, 'notification_exists': notification_exists})
 
-from django.utils import timezone
+class DeleteFacultyView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def post(self, request, faculty_id):
+        if not request.user.is_staff:
+             return render(request, 'home/forbidden.html', status=403)
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
+        faculty.deleted=True   
+        p_details=get_object_or_404(ProfessionalDetail, user=faculty_id)  
+        current_date = timezone.now().date() 
+        p_details.leaving_date=current_date
+        faculty.save()  # Save the changes to the faculty instance 
+        p_details.save()
+        return redirect('ad_page')
 
+class ArchiveDataView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            # If the user is not a staff member, return the forbidden page
+            return render(request, 'home/forbidden.html', status=403)
+        fac_objs = Faculty_Login.objects.filter(deleted=True)
 
+        # Pass the queryset to the template context
+        context = {
+            'faculty_logins': list(fac_objs)
+        }
+        return render(request, 'home/archive_data.html',context)
 
-def delete_faculty(request,faculty_id): 
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
-    faculty.deleted=True   
-    p_details=get_object_or_404(ProfessionalDetail, user=faculty_id)  
-    current_date = timezone.now().date() 
-    p_details.leaving_date=current_date
-    faculty.save()  # Save the changes to the faculty instance 
-    p_details.save()
-    return redirect('ad_page')
-    
+class AdminPersonalView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
+        context={'faculty':faculty}
+        return render(request,'home/personal.html',context)
 
-
-def archive_data_view(request): 
-    # archive_data=Archive.objects.all() 
-    # print(archive_data) 
-
-    fac_objs = Faculty_Login.objects.filter(deleted=True)
-
-    # Pass the queryset to the template context
-    context = {
-        'faculty_logins': list(fac_objs)
-    }
-
-    return render(request, 'home/archive_data.html',context)
-
-
-
-from django.contrib import messages
-
-
-def admin_personal(request,faculty_id): 
-    # username = request.session.get('username')  
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
-    context={'faculty':faculty}  
-    if request.method=='POST':
+    def post(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
+        context={'faculty':faculty}
         digital_id = request.POST.get('digital_id')
         fname = request.POST.get('first_name')
         lname = request.POST.get('last_name')
@@ -359,46 +287,15 @@ def admin_personal(request,faculty_id):
         if 'adminlogin' in request.path:
             return redirect('faculty_personal', faculty_id=faculty_id)
         return redirect('admin_personal', faculty_id=faculty_id)
-    
-    return render(request,'home/personal.html',context) 
 
-""" def admin_academic(request, faculty_id):
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+class AdminAcademicView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = Faculty_Login.objects.get(username=faculty_id)
+        academic = AcademicPerformance.objects.filter(user=faculty)
+        context = {'academic': academic, 'faculty': faculty}
+        return render(request, 'home/academic_performance.html', context)
 
-    if request.method == 'POST': 
-        # Process form data
-
-        #geek 
-
-        # Process form data
-        degree = request.POST.get('degree')
-        institution_code = request.POST.get('institution-code')
-        year_of_completion = request.POST.get('year-of-completion')
-        remark = request.POST.get('remark')
-        
-        # Assuming 'faculty_id' is passed in the URL or as a hidden field in the form
-        faculty_login = Faculty_Login.objects.get(username=faculty_id)
-        
-        # Update existing AcademicPerformance instances
-        academic_performances = AcademicPerformance.objects.filter(user=faculty_login)
-        for index, academic_performance in enumerate(academic_performances):
-            academic_performance.degree = request.POST.get(f'degree{index+1}')
-            academic_performance.institution_code = request.POST.get(f'institution-code{index+1}')
-            academic_performance.year_of_completion = request.POST.get(f'year-of-completion{index+1}')
-            academic_performance.remark = request.POST.get(f'remark{index+1}')
-            academic_performance.save()
-        
-        messages.success(request, 'Academic performance updated successfully.')
-        return redirect('update_academic_performance', faculty_id=faculty_id)
-    else:
-        # Render the form with existing academic performances data
-        faculty_login = Faculty_Login.objects.get(username=faculty_id)
-        academic_performances = AcademicPerformance.objects.filter(user=faculty_login)
-        return render(request, 'home/academic_performance.html', {'academic_performances': academic_performances})
- """
-
-def admin_academic(request, faculty_id):
-    if request.method == 'POST':
+    def post(self, request, faculty_id):
         try:
             faculty = Faculty_Login.objects.get(username=faculty_id)
             existing_records = AcademicPerformance.objects.filter(user=faculty)
@@ -429,49 +326,14 @@ def admin_academic(request, faculty_id):
         except:
             messages.error(request, 'Failed to update data')
 
-    else:
-        faculty = Faculty_Login.objects.get(username=faculty_id)
-        academic = AcademicPerformance.objects.filter(user=faculty)
-        context = {'academic': academic, 'faculty': faculty}
-        return render(request, 'home/academic_performance.html', context)
-       
+class AdminProfessionalView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, pk=faculty_id)
+        context = {'faculty': faculty}
+        return render(request, 'home/professional_details.html', context)
 
-    #     degree = request.POST.get('degree')
-    #     institution_code = request.POST.get('institution-code')
-    #     year_of_completion = request.POST.get('year-of-completion')
-    #     remark = request.POST.get('remark')
-        
-    #     # Create or update AcademicPerformance instance
-    #     academic_performance, created = AcademicPerformance.objects.get_or_create(user=faculty, degree=degree)
-    #     academic_performance.institution_code = institution_code
-    #     academic_performance.year_of_completion = year_of_completion
-    #     academic_performance.remark = remark
-    #     academic_performance.save()
-
-    #     if created:
-    #         messages.success(request, 'Academic performance added successfully.')
-    #     else:
-    #         messages.success(request, 'Academic performance updated successfully.')
-
-    #     return redirect('admin_academic', faculty_id=faculty_id)  # Redirect to the same page after saving data
-    # else:
-    #     academic = AcademicPerformance.objects.filter(user=faculty)
-    #     context = {'academic': academic, 'faculty': faculty}
-    #     return render(request, 'home/academic_performance.html', context)
-
-def success_view(request):
-    return render(request, 'success.html')
-    
-# def admin_professional(request,faculty_id):
-#     faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-#     # pro_details = ProfessionalDetail.objects.filter(user=faculty) 
-#     context={'faculty':faculty}
-#     return render(request,'home/professional_details.html',context)
-
-def admin_professional(request, faculty_id):
-    faculty = get_object_or_404(Faculty_Login, pk=faculty_id)
-    
-    if request.method == 'POST':
+    def post(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, pk=faculty_id)
         try:
             # Assuming you are passing the username in the POST data
             username = request.POST.get('username')
@@ -519,22 +381,16 @@ def admin_professional(request, faculty_id):
                 return HttpResponse("Username does not match faculty's username.")
         except:
             messages.error(request, 'Failed to update data')
-    
-    context = {'faculty': faculty}
-    return render(request, 'home/professional_details.html', context)
 
-# def admin_awards(request,faculty_id):
-#     faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
-#     awards = Award.objects.filter(user=faculty) 
-#     print(awards)
-#     context={'awards':awards,'faculty':faculty} 
-#     return render(request,'home/awards.html',context)
+class AdminAwardsView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
+        awards = Award.objects.filter(user=faculty)
+        context = {'awards': awards, 'faculty': faculty}
+        return render(request, 'home/awards.html', context)
 
-def admin_awards(request, faculty_id):
-
-    faculty = get_object_or_404(Faculty_Login, username=faculty_id)
-
-    if request.method == 'POST':
+    def post(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)
         try:
             # Process the form data
             for key, value in request.POST.items():
@@ -559,19 +415,14 @@ def admin_awards(request, faculty_id):
         except:
             messages.error(request, 'Failed to update data')
 
-    else:
-        awards = Award.objects.filter(user=faculty)
-        context = {'awards': awards, 'faculty': faculty}
-        return render(request, 'home/awards.html', context)
+class AdminProfessionalExpView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
+        prof_exp = Professionalexp.objects.filter(user=faculty) 
+        context = {'faculty': faculty, 'prof_exp': prof_exp}
+        return render(request, 'home/professional_experience.html', context)
 
-# def admin_profexp(request,faculty_id):
-#     faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-#     prof_exp = Professionalexp.objects.filter(user=faculty) 
-#     context={'faculty':faculty,'prof_exp':prof_exp}
-#     return render(request,'home/professional_experience.html',context)
-
-def admin_profexp(request, faculty_id):
-    if request.method == 'POST':
+    def post(self, request, faculty_id):
         try:
             # If the request is a POST, it means the form was submitted
             faculty = get_object_or_404(Faculty_Login, username=faculty_id)
@@ -605,16 +456,15 @@ def admin_profexp(request, faculty_id):
             return redirect('admin_profexp', faculty_id=faculty_id)
         except:
             messages.error(request, 'Failed to update data')
-    else:
-        # If the request is not a POST, it means the page was accessed via GET
-        # Render the template with the professional experience details
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)  
-        prof_exp = Professionalexp.objects.filter(user=faculty) 
-        context = {'faculty': faculty, 'prof_exp': prof_exp, 'is_admin_login': '/adminlogin/' in request.path}
-        return render(request, 'home/professional_experience.html', context)
 
-def admin_coursestaught(request,faculty_id):
-    if request.method == 'POST':
+class AdminCoursesTaughtView(LoginRequiredMixin, View):
+    def get(self, request, faculty_id):
+        faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
+        c_taughts = CoursesTaught.objects.filter(user=faculty)
+        context={'c_taughts':c_taughts,'faculty':faculty}
+        return render(request,'home/courses_taught.html',context)
+
+    def post(self, request, faculty_id):
         try:
             # If the request is a POST, it means the form was submitted
             faculty = get_object_or_404(Faculty_Login, username=faculty_id)
@@ -639,13 +489,6 @@ def admin_coursestaught(request,faculty_id):
         except:
             messages.error(request, 'Failed to update data')
 
-    else:
-        faculty = get_object_or_404(Faculty_Login, username=faculty_id)   
-        c_taughts = CoursesTaught.objects.filter(user=faculty)
-        context={'c_taughts':c_taughts,'faculty':faculty}
-        return render(request,'home/courses_taught.html',context)
-
-
 def admin_page_filter(request):
     if request.method == 'POST': 
         all_faculty = ProfessionalDetail.objects.all()
@@ -655,11 +498,7 @@ def admin_page_filter(request):
         dol = request.POST.get('dol')
         dob = request.POST.get('dob')
         experience = request.POST.get('experience')
-         
-        print(designation) 
-        print(doj) 
-        print(dol) 
-        print(experience)   
+
         faculty_details1=faculty_details2=experienced_faculty=None
         
 
@@ -755,7 +594,7 @@ def admin_page_filter(request):
         
 
 
-
+@login_required
 def archive_page_filter(request):
     if request.method == 'POST': 
         all_faculty = ProfessionalDetail.objects.all()
@@ -857,15 +696,6 @@ def archive_page_filter(request):
         else:
             # If user details are not found, render a template with a message
             return render(request, 'home/details_not_found.html')
-
-
-    
-
-
-
-
-
-
 
 
 # Create your views here.

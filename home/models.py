@@ -27,6 +27,8 @@ class Faculty_Login(models.Model):
     deleted = models.BooleanField(default=False)  # Added deleted column
     edit_granted = models.BooleanField(default=False)  # Added edit_granted column
     edit_request_time = models.DateTimeField(default=None, null=True, blank=True)
+    edit_grant_time = models.DateTimeField(default=None, null=True, blank=True)
+    edit_expiry_time = models.DateTimeField(default=None, null=True, blank=True)
     
     # Other attributes of the Faculty model
     

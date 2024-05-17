@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_xhtml2pdf"
+    "django_xhtml2pdf",
+    "django_apscheduler"
 ]
 
 MIDDLEWARE = [

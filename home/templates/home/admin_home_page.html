@@ -261,6 +261,8 @@
         <div class="notification-icon" onclick="toggleNotifications()">
             📢
         </div>
+
+        <a href="{% url 'logout' %}">Log Out</a>
     </header>
 
     <!-- Notification section -->
@@ -413,6 +415,12 @@
         </div>
     </main> {% endcomment %}
     <script>
+
+        function toggleMenu() {
+            var menuTab = document.getElementById('menuTab');
+            menuTab.classList.toggle('open');
+            document.body.classList.toggle('opened-menu'); // Toggle class on body
+        }
 
         function toggleNotifications() {
             var overlay = document.getElementById('notificationOverlay');

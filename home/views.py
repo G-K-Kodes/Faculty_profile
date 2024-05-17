@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.urls import reverse
 from django.views import View
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth.hashers import check_password
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
@@ -17,11 +17,9 @@ from.models import Faculty_Login,ProfessionalDetail,Award,AcademicPerformance,Pr
 
 def home(request):
     if request.user.is_authenticated:
-        if request.user.is_staff:
-            view=AdminPageView
-            return view.get(view, request)
-        view=SetFacultySessionView
-        return view.get(view,request,faculty_id=request.user.username)
+            if request.user.is_staff:
+                return redirect('/adminlogin/admin_page')
+            return redirect(f'{request.user.username}/',faculty_id=request.user.username)
     return render(request, 'home/home_kamesh.html')
 
 def logout_view(request):
@@ -65,6 +63,10 @@ class FacultyLoginView(View):
             return render(request, 'home/flogin.html', {'error_message': 'User no longer part of this institution'}) 
     
     def get(self, request):
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return redirect('/adminlogin/admin_page')
+            return redirect(f'{request.user.username}/',faculty_id=request.user.username)
         return render(request, 'home/flogin.html')
     
 class AdminLoginView(View):
@@ -95,6 +97,10 @@ class AdminLoginView(View):
             return render(request, 'home/alogin.html', {'error_message': 'Invalid username or password'})
         
     def get(self, request):
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return redirect('/adminlogin/admin_page')
+            return redirect(f'{request.user.username}/',faculty_id=request.user.username)
         return render(request, 'home/alogin.html')
 
 class AdminPageView(LoginRequiredMixin, StaffRequiredMixin, View):
@@ -183,18 +189,20 @@ class SetFacultySessionView(LoginRequiredMixin, View):
                 faculty_login.edit_granted = True
                 faculty_login.edit_request_time=None
                 faculty_login.edit_grant_time=timezone.now()
-                expiry_delta = datetime.timedelta(hours=23, minutes=59, seconds=59)
-                faculty_login.edit_expiry_time = faculty_login.edit_grant_time + expiry_delta
+                expiry_delta = timedelta(hours=23, minutes=59, seconds=59)
+                expiry_time = timezone.now() + expiry_delta
+                faculty_login.edit_expiry_time = expiry_time
                 faculty_login.save()
 
                 # Delete the notification since the request has been handled
                 notification.delete()
-
                 messages.success(request, 'Edit access request accepted successfully.')
-
-                return redirect('set_faculty_session_admin', faculty_id=faculty_id)
-            except:
+                return redirect('set_faculty_session', faculty_id=faculty_id)
+            except Exception as e:
+                print(f"An error occurred: {e}")
                 messages.error(request, 'Failed to update data')
+                return redirect('set_faculty_session_admin', faculty_id=faculty_id)
+            
 
 class DeleteFacultyView(LoginRequiredMixin, StaffRequiredMixin, View):
     def post(self, request, faculty_id):
@@ -249,7 +257,6 @@ class AdminPersonalView(LoginRequiredMixin, View):
             context['error_message'] = "Please fill in all the required fields."
             return render(request, 'home/personal.html', context)
 
-
         try:
             faculty.personaldetail.digital_id = digital_id
             faculty.personaldetail.first_name = fname
@@ -285,8 +292,8 @@ class AdminPersonalView(LoginRequiredMixin, View):
         faculty.personaldetail.save()
         messages.success(request, 'Personal details updated successfully')
         if 'adminlogin' in request.path:
-            return redirect('faculty_personal', faculty_id=faculty_id)
-        return redirect('admin_personal', faculty_id=faculty_id)
+            return redirect('admin_personal', faculty_id=faculty_id)
+        return redirect('faculty_personal', faculty_id=faculty_id)
 
 class AdminAcademicView(LoginRequiredMixin, View):
     def get(self, request, faculty_id):
@@ -489,6 +496,7 @@ class AdminCoursesTaughtView(LoginRequiredMixin, View):
         except:
             messages.error(request, 'Failed to update data')
 
+@login_required
 def admin_page_filter(request):
     if request.method == 'POST': 
         all_faculty = ProfessionalDetail.objects.all()
@@ -591,10 +599,117 @@ def admin_page_filter(request):
         else:
             # If user details are not found, render a template with a message
             return render(request, 'home/details_not_found.html') 
+
+def admin_page_filter(request):
+    if request.method == 'POST': 
+        all_faculty = ProfessionalDetail.objects.all()
+        # Assuming your form fields are 'designation', 'doj', 'dob', and 'experience'
+        designation = request.POST.get('designation')
+        doj = request.POST.get('doj')
+        dol = request.POST.get('dol')
+        dob = request.POST.get('dob')
+        experience = request.POST.get('experience')
+         
+        print(designation) 
+        print(doj) 
+        print(dol) 
+        print(experience)   
+        faculty_details1=faculty_details2=experienced_faculty=None
+        
+
+        # Assuming UserDetails model has fields: designation, doj, dob, experience
+        # Querying the database for matching user details 
+        if designation:
+            user_details1 = ProfessionalDetail.objects.filter(designation=designation) 
+            faculty_details1 = [detail.user for detail in user_details1 if not detail.user.deleted] 
+        # if doj:
+        #     user_details2=ProfessionalDetail.objects.filter(joining_date__gte=doj)
+        # if dol:
+        #     user_details2=ProfessionalDetail.objects.filter(joining_date__lte=dol)
+        # faculty_details2 = [detail.user for detail in user_details2 if not detail.user.deleted] 
+        if doj:
+            if dol:
+                # user_details2 = ProfessionalDetail.objects.filter(joining_date__gte=doj)  
+                user_details2_1 = ProfessionalDetail.objects.filter(joining_date__lte=dol)  
+                user_details2_2 = ProfessionalDetail.objects.filter(leaving_date__gte=doj)  
+                user_details2_3 = ProfessionalDetail.objects.filter(leaving_date__lte=dol)   
+                combined_user_details = user_details2_1.union(user_details2_2,user_details2_3)
+                faculty_details2 = [detail.user for detail in combined_user_details if not detail.user.deleted] 
+            else:
+                user_details2 = ProfessionalDetail.objects.filter(joining_date__gte=doj)
+                user_details2_1 = ProfessionalDetail.objects.filter(leaving_date__gte=doj) 
+                user_details2_2 = ProfessionalDetail.objects.filter(leaving_date__isnull=True)
+
+                combined_user_details = user_details2.union(user_details2_1,user_details2_2)
+                faculty_details2 = [detail.user for detail in combined_user_details if not detail.user.deleted] 
+          
+
+    # Calculate today's date
+        from datetime import date
+
+# Get today's date
+
+        today_date = date.today() 
+        if experience:
+            all_faculty = ProfessionalDetail.objects.all()
+
+            # List to store experienced faculty members
+            experienced_faculty = []
+
+            # Traverse through each faculty member and calculate experience
+            for faculty in all_faculty:
+                # Calculate experience
+                if faculty.leaving_date:
+                    # If date of leaving is provided, calculate experience till leaving date
+                    calc_experience = (faculty.leaving_date - faculty.joining_date).days / 365.25
+                else:
+                    # If date of leaving is not provided, calculate experience till today
+                    calc_experience = (today_date - faculty.joining_date).days / 365.25
+                
+                # Check if the experience meets a certain threshold (e.g., 5 years)
+                if calc_experience >=  int(experience) and not faculty.user.deleted:
+                    # Add experienced faculty member to the list
+                    experienced_faculty.append(faculty.user) 
+        if faculty_details1!=None and faculty_details2!=None and experienced_faculty!=None:
+            lists = [faculty_details1,faculty_details2,experienced_faculty]
+        elif faculty_details1==None and faculty_details2==None and experienced_faculty==None:
+            lists = []
+        elif faculty_details1!=None and faculty_details2!=None and experienced_faculty==None:
+            lists = [faculty_details1,faculty_details2]
+        elif faculty_details1!=None and faculty_details2==None and experienced_faculty!=None:
+            lists = [faculty_details1,experienced_faculty]
+        elif faculty_details1==None and faculty_details2!=None and experienced_faculty!=None:
+            lists = [faculty_details2,experienced_faculty]
+        elif faculty_details1!=None and faculty_details2==None and experienced_faculty==None:
+            lists = [faculty_details1]
+        elif faculty_details1==None and faculty_details2!=None and experienced_faculty==None:
+            lists = [faculty_details2]
+        elif faculty_details1==None and faculty_details2==None and experienced_faculty!=None:
+            lists = [experienced_faculty]
+
+# Convert each list into a set
+        sets = [set(lst) for lst in lists]
+
+# Find the common elements using intersection
+        common_elements = set.intersection(*sets)
+
+# Convert the common elements back to a list if needed
+        common_elements_list = list(common_elements)
+
+
+
+
+        
+        if common_elements_list:
+            # If user details are found, render a template with the details
+            return render(request, 'home/admin_home_page.html', {'faculty_logins': common_elements_list})
+        else:
+            # If user details are not found, render a template with a message
+            return render(request, 'home/details_not_found.html') 
         
 
 
-@login_required
+
 def archive_page_filter(request):
     if request.method == 'POST': 
         all_faculty = ProfessionalDetail.objects.all()
@@ -696,6 +811,3 @@ def archive_page_filter(request):
         else:
             # If user details are not found, render a template with a message
             return render(request, 'home/details_not_found.html')
-
-
-# Create your views here.

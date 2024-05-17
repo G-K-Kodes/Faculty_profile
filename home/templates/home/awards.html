@@ -337,7 +337,7 @@
             var startTime = Date.now();
             var updateProgressBar = function () {
                 var elapsedTime = Date.now() - startTime;
-                var progress = (elapsedTime / timeoutDuration) * 100;
+                var progress = ((timeoutDuration - elapsedTime) / timeoutDuration) * 100;
                 progressBar.style.width = progress + "%";
 
                 // Continue updating until the timeout expires

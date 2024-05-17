@@ -206,6 +206,9 @@
         <div class="logo">
             <img src="{% static 'home/college_logo.jpg' %}" alt="College Logo">
         </div>
+        {% if not '/adminlogin/' in request.path %}
+        <a href="{% url 'logout' %}">Log Out</a>
+        {% endif %}
         <h1>Faculty Details</h1>
         {% if not '/adminlogin/' in request.path %}
         {% if not faculty.edit_granted %}
@@ -214,11 +217,8 @@
             <button type="submit" name="request_edit_access" id="editAccessButton">Request Edit Access</button>
         </form>
         {% else %}
-        <form method="post" action="">
-            {% csrf_token %}
-            <button type="submit" name="accept_changes" id="editAccessButton">Accept Changes</button>
-        </form>
-        {% endif%}
+        <form method="post" action=""></form>
+        {% endif %}
         {% elif '/adminlogin/' in request.path and not faculty.edit_granted and notification_exists %}
         <form method="post" action="">
             {% csrf_token %}
@@ -296,7 +296,7 @@
             var startTime = Date.now();
             var updateProgressBar = function () {
                 var elapsedTime = Date.now() - startTime;
-                var progress = (elapsedTime / timeoutDuration) * 100;
+                var progress = ((timeoutDuration - elapsedTime) / timeoutDuration) * 100;
                 progressBar.style.width = progress + "%";
 
                 // Continue updating until the timeout expires

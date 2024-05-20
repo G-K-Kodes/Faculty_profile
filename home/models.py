@@ -172,8 +172,11 @@ class PersonalDetail(models.Model):
 
 
 class Course(models.Model):
+    course_type_choices=[('Theory','Theory'), ('Practical', 'Practical'), ('Theory-Cum-Practical', 'Theory-Cum-Practical')]
     course_id = models.CharField(max_length=50,primary_key=True)
     course_name = models.CharField(max_length=255)
+    deleted = models.BooleanField(default=False)
+    course_type = models.CharField(max_length=40, choices=course_type_choices, default='Theory')
 
     def __str__(self):
         return f"{self.course_id} - {self.course_name}" 
@@ -201,10 +204,6 @@ class Professionalexp(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.designation} -({self.institution_code})" 
-
-   
-
-
 
 class CoursesTaught(models.Model): 
     sno=models.AutoField(primary_key=True)

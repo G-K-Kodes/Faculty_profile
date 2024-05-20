@@ -4,10 +4,13 @@ import os
 import sys
 import subprocess
 import threading
+import time
 
 def start_scheduler():
-    """Start the scheduler command."""
-    subprocess.run(['python', 'manage.py', 'scheduler'])
+    """Start the scheduler command at regular intervals."""
+    while True:
+        subprocess.run(['python', 'manage.py', 'scheduler'])
+        time.sleep(30) 
 
 def main():
     """Run administrative tasks."""

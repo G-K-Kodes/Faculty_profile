@@ -1,4 +1,3 @@
-<!-- working with search options-->
 {% load static %}
 
 <!DOCTYPE html>
@@ -12,7 +11,6 @@
         /* General Styles */
         body {
             background-color: #66ffff;
-            background-image: url('{% static "home/adminbg.jpg" %}');
             background-size: cover;
             background-repeat: no-repeat;
             font-family: Arial,
@@ -35,40 +33,6 @@
 
         main {
             padding: 50px;
-        }
-
-        .search-bar {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-        }
-
-        #searchInput,
-        #searchOptions {
-            padding: 8px;
-            border: 1px solid #ccc;
-        }
-
-        #searchInput {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-
-        #searchButton {
-            padding: 8px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-
-        .menu-icon {
-            cursor: pointer;
-            position: fixed;
-            right: 25px;
-            top: 15px;
-            z-index: 1000;
-            color: #fff;
         }
 
         .menu-tab {
@@ -164,46 +128,29 @@
             background-color: #f0f0f0;
         }
 
-        /* Grid Styles */
-        .faculty-grid {
-            display: grid;
-            grid-auto-flow: row;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 50px;
-            padding: 20px;
-        }
-
-        .faculty-card {
-            border: 1px solid #ccc;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 250px;
-            height: 200px;
+        .search-bar {
+            margin-bottom: 20px;
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+            align-items: center;
         }
 
-        .faculty-card a {
-            display: block;
-            width: 100%;
-            height: 100%;
-            text-decoration: none;
-            color: inherit;
+        #searchInput,
+        #searchOptions {
+            padding: 8px;
+            border: 1px solid #ccc;
         }
 
-        .faculty-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        #searchInput {
+            flex-grow: 1;
+            margin-right: 10px;
         }
 
-        .faculty-details {
-            max-height: 20%;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 15px;
+        #searchButton {
+            padding: 8px;
+            background-color: #333;
             color: #fff;
-            text-align: center;
+            border: none;
+            cursor: pointer;
         }
 
         /* CSS for action buttons */
@@ -212,7 +159,7 @@
             height: 50px;
             width: 180px;
             display: inline-block;
-            float: right
+            float: right;
         }
 
         .action-button button {
@@ -245,6 +192,33 @@
         .delete-button:hover {
             background-color: #cc0000;
         }
+
+        .courses-table th,
+        .courses-table td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .courses-table th {
+            background-color: #333;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .courses-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .courses-table tr:hover {
+            background-color: #ddd;
+        }
+
+        .courses-table tr {
+            transition: background-color 0.2s ease;
+        }
+
     </style>
 </head>
 
@@ -254,15 +228,14 @@
             <img src='{% static "home/college_logo.jpg" %}' alt="College Logo">
         </div>
 
-        <div class="menu-icon" onclick="toggleMenu()">
-            ☰
-        </div>
-
         <div class="notification-icon" onclick="toggleNotifications()">
             📢
         </div>
 
-        <a href="{% url 'logout' %}">Log Out</a>
+        <div class="menu-icon" onclick="toggleMenu()">
+            ☰
+        </div>
+
     </header>
 
     <!-- Notification section -->
@@ -284,35 +257,18 @@
 
     <div class="menu-tab" id="menuTab">
 
-        <form action="{% url 'ad_page_filter' %}" method="POST">
+        <form action="{% url 'archive_course_filter' %}" method="POST">
             {% csrf_token %}
             <div class="menu-items">
                 <br><br><br>
                 <div class="menu-item">
-                    <label for="designation"><b>Designation</b></label>
-                    <select id="designation" name='designation' onchange="filter()">
-                        <option value="">Select Designation</option>
-                        <option value="HOD">HOD</option>
-                        <option value="Associate Professor">Associate Professor</option>
-                        <option value="Assistant Professor">Assistant Professor</option>
-                        <option value="Professor">Professor</option>
+                    <label for="course-type"><b>Course Type</b></label>
+                    <select id="course-type" name='course-type' onchange="filter()">
+                        <option value="course-type">Select Course Type:</option>
+                        <option value="Theory">Theory</option>
+                        <option value="Practical">Practical</option>
+                        <option value="Theory-Cum-Practical">Theory-Cum-Practical</option>
                     </select>
-                </div><br>
-                <div class="menu-item">
-                    <label for="doj">Starting Date</label>
-                    <input type="date" id="doj" name="doj">
-                </div><br>
-                <div class="menu-item">
-                    <label for="dol">Ending Date</label>
-                    <input type="date" id="dol" name="dol">
-                </div><br>
-                <div class="menu-item">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob" name="dob">
-                </div><br>
-                <div class="menu-item">
-                    <label for="experience">Years of experience</label>
-                    <input type="number" id="experience" name="experience">
                 </div><br>
                 <div class="menu-item">
                     <button type="submit">Submit</button>
@@ -322,102 +278,29 @@
     </div>
 
     <main id="mainContent">
-        <!-- <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Search..." oninput="search()">
-            <select id="searchOptions" onchange="search()">
-                <option value="all">All</option>
-                <option value="ssn_id">SSN ID</option>
-                <option value="digital_id">Digital ID</option>
-                <option value="first_name">First Name</option>
-                <option value="last_name">Last Name</option>
-                <option value="contact_number">Contact Number</option>
-                <option value="email">Email</option>
-                <option value="aicte_id">AICTE ID</option>
-            </select>
-        </div> -->
-
         <br><br>
 
-        <form action="{% url 'archive_data_view' %}" method="get">
-            <button type="submit" class="action-button">View Archive Data</button>
-        </form>
-
-        <form action="{% url 'create_signup' %}" method="get">
-            <button type="submit" class="action-button">Create New Faculty</button>
-        </form>
-
-        <form action="{% url 'courses_view' %}" method="get">
-            <button type="submit" class="action-button">View Courses</button>
-        </form>
-
-        <div class="faculty-grid" id="facultyGrid">
-            <!-- Faculty profile photos grid will be populated here -->
-
-            {% for faculty_login in faculty_logins %}
-
-            <div class="faculty-card">
-
-                <a href="{% url 'set_faculty_session_admin' faculty_login.username %}">
-                    <div class="faculty-details">
-                        <strong>Username:</strong> {{ faculty_login.username }}<br>
-                        {% if faculty_login.personaldetail.first_name %}
-                        <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
-                        {% else %}
-                        <strong>First Name:</strong> User details not filled yet<br>
-                        {% endif %}
-                    </div>
-                    <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
-                </a>
-
-                <form action="{% url 'delete_faculty' faculty_login.username %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="delete-button">Delete</button>
-                </form>
-
-            </div>
-            {% endfor %}
-
-        </div>
+        <!-- Courses Table -->
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Course Name</th>
+                    <th>Course Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td>{{ course.course_id }}</td>
+                    <td>{{ course.course_name }}</td>
+                    <td>{{ course.course_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </main>
 
-
-
-    {% comment %} <main id="mainContent">
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Search..." oninput="search()">
-            <select id="searchOptions" onchange="search()">
-                <option value="all">All</option>
-                <option value="ssn_id">SSN ID</option>
-                <option value="digital_id">Digital ID</option>
-                <option value="first_name">First Name</option>
-                <option value="last_name">Last Name</option>
-                <option value="contact_number">Contact Number</option>
-                <option value="email">Email</option>
-                <option value="aicte_id">AICTE ID</option>
-            </select>
-        </div>
-
-        <br><br>
-        <div class="faculty-grid" id="facultyGrid">
-            <!-- Faculty profile photos grid will be populated here -->
-            <ul>
-                {% for faculty_login in faculty_logins %}
-                <li>
-                    <strong>Username:</strong> {{ faculty_login.username }}<br>
-                    {% if faculty_login.personaldetail.first_name %}
-                    <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
-                    {% else %}
-                    <strong>First Name:</strong> User details not filled yet<br>
-                    {% endif %}
-                    <strong>Profile Picture:</strong><br>
-                    <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
-                </li>
-                {% endfor %}
-
-            </ul>
-
-        </div>
-    </main> {% endcomment %}
     <script>
 
         function toggleMenu() {
@@ -440,7 +323,6 @@
                 overlay.style.display = 'none'; // Close the overlay
             }
         });
-
 
         document.addEventListener('click', function (event) {
             var menuTab = document.getElementById('menuTab');
@@ -484,41 +366,6 @@
             }
         }
 
-
-        {% comment %} var facultyData = [
-            { name: 'A', designation: 'Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
-            { name: 'B', designation: 'Assistant Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
-            { name: 'C', designation: 'HOD', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
-            { name: 'D', designation: 'Associate Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
-            { name: 'E', designation: 'Professor', department: 'Department of Engineering', profileURL: 'https://www.ssn.edu.in/staff-members/dr-chandrabose-aravindan/' },
-            // Add more faculty data as needed
-        ];
-
-        var facultyGrid = document.getElementById('facultyGrid');
-
-        facultyData.forEach(function (faculty) {
-            var facultyCard = document.createElement('div');
-            facultyCard.classList.add('faculty-card');
-
-            var profileLink = document.createElement('a');
-            profileLink.href = faculty.profileURL;
-            profileLink.target = "_blank";
-
-            var img = document.createElement('img');
-            //img.src = 'faculty_profile_photos/dr_chandrabose_aravindan.jpg'; // Adjust the path to the actual photo
-            img.src = '{% static "home/default-profile.jpg" %}';
-            img.alt = faculty.name;
-
-            var details = document.createElement('div');
-            details.classList.add('faculty-details');
-            details.textContent = `${faculty.name} - ${faculty.designation}`; // Display name and designation
-
-            profileLink.appendChild(img);
-            facultyCard.appendChild(profileLink);
-            facultyCard.appendChild(details); // Append details to the card
-
-            facultyGrid.appendChild(facultyCard);
-        }); {% endcomment %}
         function filter() {
             var designationOptions = document.querySelectorAll('input[name="designation"]:checked');
             var bloodGroupOptions = document.querySelectorAll('input[name="blood-group"]:checked');
@@ -546,8 +393,4 @@
                 }
             }
         }
-
     </script>
-</body>
-
-</html>

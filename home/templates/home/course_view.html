@@ -1,0 +1,444 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Details</title>
+    <style>
+        /* General Styles */
+        body {
+            background-color: #66ffff;
+            background-image: url('{% static "home/adminbg.jpg" %}');
+            background-size: cover;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+        }
+
+        .logo img {
+            max-width: 70px;
+            height: auto;
+        }
+
+        main {
+            padding: 50px;
+        }
+
+        .menu-tab {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 200px;
+            height: 100%;
+            background-color: #333;
+            color: #fff;
+            padding: 2px;
+            transition: right 0.3s ease;
+            z-index: 900;
+        }
+
+        .menu-tab.open {
+            right: 0;
+        }
+
+        .menu-items {
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            margin-bottom: 10px;
+        }
+
+        .menu-item label {
+            display: block;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .menu-item input {
+            margin-right: 5px;
+        }
+
+        .notification-icon {
+            cursor: pointer;
+            position: fixed;
+            right: 60px;
+            top: 15px;
+            z-index: 1000;
+            color: #fff;
+        }
+
+        .notification-overlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            transform: translate(-50%, -50%);
+            height: 75%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+        }
+
+        .notification-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification-content h2 {
+            margin-bottom: 10px;
+        }
+
+        .notification-item {
+            margin-bottom: 10px;
+        }
+
+        .notification-item a {
+            text-decoration: none;
+        }
+
+        .notification-item button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            color: #333;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .notification-item button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        #searchInput,
+        #searchOptions {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        #searchInput {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        #searchButton {
+            padding: 8px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* CSS for action buttons */
+        .action-button {
+            margin-bottom: 20px;
+            height: 50px;
+            width: 180px;
+            display: inline-block;
+            float: right;
+        }
+
+        .action-button button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-button button:hover {
+            background-color: #0056b3;
+        }
+
+        /* CSS for delete button */
+        .delete-button {
+            margin-top: 10px;
+            background-color: #ff3333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-button:hover {
+            background-color: #cc0000;
+        }
+
+        .submit-button {
+            margin-top: 10px;
+            background-color: #42c41b;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background-color: #57c529;
+        }
+
+        .courses-table th,
+        .courses-table td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .courses-table th {
+            background-color: #333;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .courses-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .courses-table tr:hover {
+            background-color: #ddd;
+        }
+
+        .courses-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .add-course-button {
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-course-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <img src='{% static "home/college_logo.jpg" %}' alt="College Logo">
+        </div>
+
+        <div class="menu-icon" onclick="toggleMenu()">
+            ☰
+        </div>
+
+        <div class="notification-icon" onclick="toggleNotifications()">
+            📢
+        </div>
+    </header>
+
+    <!-- Notification section -->
+
+    <div class="notification-overlay" id="notificationOverlay">
+        <div class="notification-content">
+            <h2>Notifications</h2>
+            <ul>
+                {% for notification in notifications %}
+                <li class="notification-item">
+                    <a href="{% url 'set_faculty_session_admin' notification.recipient %}">
+                        <button>{{ notification.message }}</button>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="menu-tab" id="menuTab">
+
+        <form action="{% url 'course_page_filter' %}" method="POST">
+            {% csrf_token %}
+            <div class="menu-items">
+                <br><br><br>
+                <div class="menu-item">
+                    <label for="course-type"><b>Course Type</b></label>
+                    <select id="course-type" name='course-type' onchange="filter()">
+                        <option value="course-type">Select Course Type:</option>
+                        <option value="Theory">Theory</option>
+                        <option value="Practical">Practical</option>
+                        <option value="Theory-Cum-Practical">Theory-Cum-Practical</option>
+                    </select>
+                </div><br>
+                <div class="menu-item">
+                    <button type="submit">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <main id="mainContent">
+        <br><br>
+
+        <form action="{% url 'archive_courses_view' %}" method="get">
+            <button type="submit" class="action-button">View Archive Courses</button>
+        </form>
+
+        <button class="add-course-button" onclick="addCourseRow()">Add New Course</button>
+
+        <!-- Courses Table -->
+        <form id="coursesForm" action="{% url 'courses_view' %}" method="post">
+            {% csrf_token %}
+            <table class="courses-table">
+                <thead>
+                    <tr>
+                        <th>Course ID</th>
+                        <th>Course Name</th>
+                        <th>Course Type</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody id="coursesTableBody">
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.course_id }}</td>
+                        <td>{{ course.course_name }}</td>
+                        <td>{{ course.course_type }}</td>
+                        <td>
+                            <form action="{% url 'delete_course' course.course_id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="delete-button">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </main>
+
+    <script>
+        function toggleMenu() {
+            var menuTab = document.getElementById('menuTab');
+            menuTab.classList.toggle('open');
+            document.body.classList.toggle('opened-menu'); // Toggle class on body
+        }
+
+        function toggleNotifications() {
+            var overlay = document.getElementById('notificationOverlay');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+        }
+
+        document.addEventListener('click', function (event) {
+            var overlay = document.getElementById('notificationOverlay');
+            var notificationIcon = document.querySelector('.notification-icon');
+
+            // Check if the click event target is outside the overlay and not the notification icon
+            if (overlay.style.display === 'block' && !overlay.contains(event.target) && event.target !== notificationIcon) {
+                overlay.style.display = 'none'; // Close the overlay
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            var menuTab = document.getElementById('menuTab');
+            var menuIcon = document.querySelector('.menu-icon');
+
+            // If the clicked element is not the menu tab or the menu icon, close the menu
+            if (!menuTab.contains(event.target) && !menuIcon.contains(event.target)) {
+                menuTab.classList.remove('open');
+                document.body.classList.remove('opened-menu'); // Remove class from body
+            }
+        });
+
+        function search() {
+            var input = document.getElementById('searchInput').value.toLowerCase();
+            var searchOption = document.getElementById('searchOptions').value;
+            var facultyCards = document.getElementsByClassName('faculty-card');
+
+            for (var i = 0; i < facultyCards.length; i++) {
+                var facultyCard = facultyCards[i];
+                var facultyDetails = facultyCard.textContent.toLowerCase();
+                var facultyDataIndex = i % facultyData.length;
+                var faculty = facultyData[facultyDataIndex];
+
+
+                if (searchOption === 'all') {
+                    if (faculty.name.toLowerCase().includes(input) ||
+                        faculty.designation.toLowerCase().includes(input) ||
+                        faculty.department.toLowerCase().includes(input)) {
+                        facultyCard.style.display = '';
+                    } else {
+                        facultyCard.style.display = 'none';
+                    }
+                } else {
+                    var attributeValue = faculty[searchOption].toLowerCase();
+                    if (attributeValue.includes(input)) {
+                        facultyCard.style.display = '';
+                    } else {
+                        facultyCard.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var coursesForm = document.getElementById('coursesForm');
+            if (coursesForm) {
+                coursesForm.addEventListener('submit', function (event) {
+                    console.log('Form submitted!');
+                });
+            }
+        });
+
+        function addCourseRow() {
+            var tableBody = document.getElementById('coursesTableBody');
+            var newRow = document.createElement('tr');
+            newRow.innerHTML = `
+            <form action="{% url 'courses_view' %}" method="post">
+                    {% csrf_token %}
+                    <td><input type="text" name="course_id" placeholder="Course ID" required></td>
+                    <td><input type="text" name="course_name" placeholder="Course Name" required></td>
+                    <td>
+                        <select name="course_type" required>
+                            <option value="Theory">Theory</option>
+                            <option value="Practical">Practical</option>
+                            <option value="Theory-Cum-Practical">Theory-Cum-Practical</option>
+                        </select>
+                    </td>
+                    <td><button type="submit" class="submit-button">Submit</button></td>
+                </form>
+                `;
+            tableBody.appendChild(newRow);
+        }
+    </script>
+</body>
+
+</html>

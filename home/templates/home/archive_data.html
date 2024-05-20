@@ -10,49 +10,60 @@
     <title>Faculty Details</title>
     <style>
         /* General Styles */
-        body { 
+        body {
             background-color: #66ffff;
-            {% comment %} background-image: url('{% static "home/adminbg.jpg" %}'); {% endcomment %}
+
+                {
+                % comment %
+            }
+
+            background-image: url('{% static "home/adminbg.jpg" %}');
+
+                {
+                % endcomment %
+            }
+
             background-size: cover;
             background-repeat: no-repeat;
-            font-family: Arial, sans-serif;
+            font-family: Arial,
+            sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
         }
-        
+
         header {
             background-color: #333;
             color: #fff;
             padding: 10px;
         }
-        
+
         .logo img {
             max-width: 70px;
             height: auto;
         }
-        
+
         main {
             padding: 50px;
         }
-        
+
         .search-bar {
             margin-bottom: 20px;
             display: flex;
             align-items: center;
         }
-        
+
         #searchInput,
         #searchOptions {
             padding: 8px;
             border: 1px solid #ccc;
         }
-        
+
         #searchInput {
             flex-grow: 1;
             margin-right: 10px;
         }
-        
+
         #searchButton {
             padding: 8px;
             background-color: #333;
@@ -60,7 +71,7 @@
             border: none;
             cursor: pointer;
         }
-        
+
         .menu-icon {
             cursor: pointer;
             position: fixed;
@@ -69,7 +80,7 @@
             z-index: 1000;
             color: #fff;
         }
-        
+
         .menu-tab {
             position: fixed;
             top: 0;
@@ -82,38 +93,38 @@
             transition: right 0.3s ease;
             z-index: 900;
         }
-        
+
         .menu-tab.open {
             right: 0;
         }
-        
+
         .menu-items {
             margin-top: 20px;
         }
-        
+
         .menu-item {
             margin-bottom: 10px;
         }
-        
+
         .menu-item label {
             display: block;
             color: #fff;
             cursor: pointer;
         }
-        
+
         .menu-item input {
             margin-right: 5px;
         }
-        
+
         /* Grid Styles */
         .faculty-grid {
-            display:grid; 
-            grid-auto-flow:row;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            display: grid;
+            grid-auto-flow: row;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 50px;
             padding: 20px;
         }
-        
+
         .faculty-card {
             border: 1px solid #ccc;
             background-color: #fff;
@@ -124,7 +135,7 @@
             flex-direction: column;
             justify-content: flex-end;
         }
-        
+
         .faculty-card a {
             display: block;
             width: 100%;
@@ -132,39 +143,114 @@
             text-decoration: none;
             color: inherit;
         }
-        
+
         .faculty-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
-        .faculty-details { 
-            max-height:20%;
+
+        .faculty-details {
+            max-height: 20%;
             background-color: rgba(0, 0, 0, 0.5);
             padding: 15px;
             color: #fff;
             text-align: center;
         }
-        
 
+        .notification-icon {
+            cursor: pointer;
+            position: fixed;
+            right: 60px;
+            top: 15px;
+            z-index: 1000;
+            color: #fff;
+        }
+
+        .notification-overlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            transform: translate(-50%, -50%);
+            height: 75%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+        }
+
+        .notification-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification-content h2 {
+            margin-bottom: 10px;
+        }
+
+        .notification-item {
+            margin-bottom: 10px;
+        }
+
+        .notification-item a {
+            text-decoration: none;
+        }
+
+        .notification-item button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            color: #333;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .notification-item button:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 
 <body>
     <header>
         <div class="logo">
-            <img src= "{% static "home/college_logo.jpg" %}" alt="College Logo">
+            <img src="{% static 'home/college_logo.jpg' %}" alt="College Logo">
+        </div>
+
+        <div class="menu-icon" onclick="toggleMenu()">
+            ☰
+        </div>
+
+        <div class="notification-icon" onclick="toggleNotifications()">
+            📢
         </div>
     </header>
-    
-    <div class="menu-icon" onclick="toggleMenu()">
-        ☰
+
+    <div class="notification-overlay" id="notificationOverlay">
+        <div class="notification-content">
+            <h2>Notifications</h2>
+            <ul>
+                {% for notification in notifications %}
+                <li class="notification-item">
+                    <a href="{% url 'set_faculty_session_admin' notification.recipient %}">
+                        <button>{{ notification.message }}</button>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
-    <div class="menu-tab" id="menuTab">  
+    <div class="menu-tab" id="menuTab">
         {% comment %} <a href='admin_page/create_signup'>Create login</a> {% endcomment %}
-        <form action= "{% url 'archive_page_filter' %}"  method="POST"> 
+        <form action="{% url 'archive_page_filter' %}" method="POST">
             {% csrf_token %}
             <div class="menu-items">
                 <br><br><br>
@@ -193,11 +279,11 @@
                 <div class="menu-item">
                     <label for="experience">Years of experience</label>
                     <input type="number" id="experience" name="experience">
-                </div><br> 
+                </div><br>
                 <div class="menu-item">
                     <button type="submit">Submit</button>
                 </div>
-            </div> 
+            </div>
         </form>
     </div>
 
@@ -215,36 +301,36 @@
                 <option value="aicte_id">AICTE ID</option>
             </select>
         </div>
-    
-        <br><br> 
 
-    
-    
+        <br><br>
+
+
+
         <div class="faculty-grid" id="facultyGrid">
             <!-- Faculty profile photos grid will be populated here -->
-            
-                {% for faculty_login in faculty_logins %} 
 
-                <div class="faculty-card">  
+            {% for faculty_login in faculty_logins %}
 
-                    <a href="{% url 'set_faculty_session' faculty_login.username %}">
-                        <div class="faculty-details">
-                            <strong>Username:</strong> {{ faculty_login.username }}<br> 
-                            {% if faculty_login.personaldetail.first_name %}
-                                <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
-                            {% else %}
-                                <strong>First Name:</strong> User details not filled yet<br>
-                            {% endif %}
-                        </div>
-                        <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture"> 
-                    </a>
-                </div>
-                {% endfor %}
-          
+            <div class="faculty-card">
+
+                <a href="{% url 'set_faculty_session_admin' faculty_login.username %}">
+                    <div class="faculty-details">
+                        <strong>Username:</strong> {{ faculty_login.username }}<br>
+                        {% if faculty_login.personaldetail.first_name %}
+                        <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
+                        {% else %}
+                        <strong>First Name:</strong> User details not filled yet<br>
+                        {% endif %}
+                    </div>
+                    <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
+                </a>
+            </div>
+            {% endfor %}
+
         </div>
     </main>
-    
-    
+
+
 
     {% comment %} <main id="mainContent">
         <div class="search-bar">
@@ -260,29 +346,35 @@
                 <option value="aicte_id">AICTE ID</option>
             </select>
         </div>
-        
+
         <br><br>
         <div class="faculty-grid" id="facultyGrid">
-           <!-- Faculty profile photos grid will be populated here -->
-<ul>
-    {% for faculty_login in faculty_logins %} 
-    <li>
-        <strong>Username:</strong> {{ faculty_login.username }}<br> 
-        {% if faculty_login.personaldetail.first_name %}
-            <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
-        {% else %}
-            <strong>First Name:</strong> User details not filled yet<br>
-        {% endif %}
-        <strong>Profile Picture:</strong><br>
-        <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
-    </li>
-{% endfor %}
+            <!-- Faculty profile photos grid will be populated here -->
+            <ul>
+                {% for faculty_login in faculty_logins %}
+                <li>
+                    <strong>Username:</strong> {{ faculty_login.username }}<br>
+                    {% if faculty_login.personaldetail.first_name %}
+                    <strong>First Name:</strong> {{ faculty_login.personaldetail.first_name }}<br>
+                    {% else %}
+                    <strong>First Name:</strong> User details not filled yet<br>
+                    {% endif %}
+                    <strong>Profile Picture:</strong><br>
+                    <img src="{{ faculty_login.profile.image.url }}" alt="Profile Picture">
+                </li>
+                {% endfor %}
 
-</ul>
+            </ul>
 
         </div>
     </main> {% endcomment %}
     <script>
+
+        function toggleNotifications() {
+            var overlay = document.getElementById('notificationOverlay');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+        }
+
         function toggleMenu() {
             var menuTab = document.getElementById('menuTab');
             menuTab.classList.toggle('open');
@@ -300,36 +392,36 @@
             }
         });
 
-    function search() {
-    var input = document.getElementById('searchInput').value.toLowerCase();
-    var searchOption = document.getElementById('searchOptions').value;
-    var facultyCards = document.getElementsByClassName('faculty-card');
+        function search() {
+            var input = document.getElementById('searchInput').value.toLowerCase();
+            var searchOption = document.getElementById('searchOptions').value;
+            var facultyCards = document.getElementsByClassName('faculty-card');
 
-    for (var i = 0; i < facultyCards.length; i++) {
-        var facultyCard = facultyCards[i];
-        var facultyDetails = facultyCard.textContent.toLowerCase();
-        var facultyDataIndex = i % facultyData.length;
-        var faculty = facultyData[facultyDataIndex];
+            for (var i = 0; i < facultyCards.length; i++) {
+                var facultyCard = facultyCards[i];
+                var facultyDetails = facultyCard.textContent.toLowerCase();
+                var facultyDataIndex = i % facultyData.length;
+                var faculty = facultyData[facultyDataIndex];
 
 
-        if (searchOption === 'all') {
-            if (faculty.name.toLowerCase().includes(input) ||
-                faculty.designation.toLowerCase().includes(input) ||
-                faculty.department.toLowerCase().includes(input)) {
-                facultyCard.style.display = '';
-            } else {
-                facultyCard.style.display = 'none';
-            }
-        } else {
-            var attributeValue = faculty[searchOption].toLowerCase();
-            if (attributeValue.includes(input)) {
-                facultyCard.style.display = '';
-            } else {
-                facultyCard.style.display = 'none';
+                if (searchOption === 'all') {
+                    if (faculty.name.toLowerCase().includes(input) ||
+                        faculty.designation.toLowerCase().includes(input) ||
+                        faculty.department.toLowerCase().includes(input)) {
+                        facultyCard.style.display = '';
+                    } else {
+                        facultyCard.style.display = 'none';
+                    }
+                } else {
+                    var attributeValue = faculty[searchOption].toLowerCase();
+                    if (attributeValue.includes(input)) {
+                        facultyCard.style.display = '';
+                    } else {
+                        facultyCard.style.display = 'none';
+                    }
+                }
             }
         }
-    }
-}
 
 
         {% comment %} var facultyData = [
@@ -367,34 +459,34 @@
             facultyGrid.appendChild(facultyCard);
         }); {% endcomment %}
         function filter() {
-    var designationOptions = document.querySelectorAll('input[name="designation"]:checked');
-    var bloodGroupOptions = document.querySelectorAll('input[name="blood-group"]:checked');
-    var facultyCards = document.getElementsByClassName('faculty-card');
+            var designationOptions = document.querySelectorAll('input[name="designation"]:checked');
+            var bloodGroupOptions = document.querySelectorAll('input[name="blood-group"]:checked');
+            var facultyCards = document.getElementsByClassName('faculty-card');
 
-    for (var i = 0; i < facultyCards.length; i++) {
-        var facultyCard = facultyCards[i];
-        var facultyDataIndex = i % facultyData.length;
-        var faculty = facultyData[facultyDataIndex];
+            for (var i = 0; i < facultyCards.length; i++) {
+                var facultyCard = facultyCards[i];
+                var facultyDataIndex = i % facultyData.length;
+                var faculty = facultyData[facultyDataIndex];
 
-        var shouldDisplay = true;
+                var shouldDisplay = true;
 
-        if (designationOptions.length > 0) {
-            shouldDisplay = shouldDisplay && Array.from(designationOptions).some(option => option.value === faculty.designation);
+                if (designationOptions.length > 0) {
+                    shouldDisplay = shouldDisplay && Array.from(designationOptions).some(option => option.value === faculty.designation);
+                }
+
+                if (bloodGroupOptions.length > 0) {
+                    shouldDisplay = shouldDisplay && Array.from(bloodGroupOptions).some(option => option.value === faculty.bloodGroup);
+                }
+
+                if (shouldDisplay) {
+                    facultyCard.style.display = '';
+                } else {
+                    facultyCard.style.display = 'none';
+                }
+            }
         }
 
-        if (bloodGroupOptions.length > 0) {
-            shouldDisplay = shouldDisplay && Array.from(bloodGroupOptions).some(option => option.value === faculty.bloodGroup);
-        }
-
-        if (shouldDisplay) {
-            facultyCard.style.display = '';
-        } else {
-            facultyCard.style.display = 'none';
-        }
-    }
-}
-
-    </script> 
+    </script>
 </body>
 
 </html>

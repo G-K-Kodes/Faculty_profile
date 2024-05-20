@@ -210,6 +210,7 @@
         <a href="{% url 'logout' %}">Log Out</a>
         {% endif %}
         <h1>Faculty Details</h1>
+        <a href="{% url 'generate_report' faculty.username %}" id="generateReportButton" class="grid-item">Generate Report</a>
         {% if not '/adminlogin/' in request.path %}
         {% if not faculty.edit_granted %}
         <form method="post" action="">
@@ -230,6 +231,11 @@
     <main id="mainContent">
         <!-- Profile Photo -->
         <img id="profilePhoto" src="{{ faculty.profile.image.url }}" alt="Profile Photo">
+        <form id="ProfilePhotoForm" name='dp' method="post" enctype="multipart/form-data" action="">
+            {% csrf_token %}
+            <input type="file" name="profile_photo" accept="image/*">
+            <button type="submit" name='dp' id="'dp">Upload Profile Photo</button>
+        </form>
         <!-- Grids -->
         <div class="grid-container">
             {% comment %} <div class="grid-item" onclick="openTab('personal-details')"> {% endcomment %}

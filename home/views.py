@@ -12,8 +12,12 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.contrib.sessions.models import Session
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 from.models import Faculty_Login,ProfessionalDetail,Award,AcademicPerformance,Professionalexp,Profile,Course,CoursesTaught,PersonalDetail,Notification
+from django.conf import settings
+from django.contrib.staticfiles import finders
+import os
 
 def home(request):
     if request.user.is_authenticated:
@@ -38,70 +42,54 @@ class FacultyLoginView(View):
         username = request.POST.get('username')
         password = request.POST.get('password')
         
-        try:
-            faculty = Faculty_Login.objects.get(username=username)
-        except Faculty_Login.DoesNotExist:
-            return render(request, 'home/flogin.html', {'error_message': 'Invalid username or password'}) 
-        
-        if faculty.deleted==False:
-            user = authenticate(request, username=username, password=password)
-            print(user)
-            if user is not None:
-                # Check if user is already logged in from another session
-                active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=user.id)
+        faculty_exists = Faculty_Login.objects.filter(username=username).exists()
+        admin_exists = User.objects.filter(username=username).exists() 
+        if faculty_exists:
+            faculty=Faculty_Login.objects.get(username=username)
+            if faculty.deleted==False:
+                user = authenticate(request, username=username, password=password)
+                if user is not None:
+                    # Check if user is already logged in from another session
+                    active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=user.id)
+                    for session in active_sessions:
+                        # Delete the session if found
+                        session.delete()
+
+                    # Login user
+                    login(request, user)
+                    return redirect(f'{request.user.username}/',faculty_id=request.user.username)   # Assuming 'about' is the name of the URL pattern for the about page
+                else:
+                    # Password doesn't match
+                    return render(request, 'home/login.html', {'error_message': 'Invalid username or password'}) 
+            else:
+                return render(request, 'home/login.html', {'error_message': 'User no longer part of this institution'})
+        elif admin_exists:
+            admin = User.objects.get(username=username)
+            if check_password(password, admin.password):
+                # Password matches, log the user in
+                active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=admin.id)
+                
                 for session in active_sessions:
                     # Delete the session if found
                     session.delete()
 
-                # Login user
-                login(request, user)
-                return redirect(f'/{username}')    # Assuming 'about' is the name of the URL pattern for the about page
+                # Log the user in
+                login(request, admin)
+
+                # Redirect to a page after successful login
+                return redirect('/adminlogin/admin_page')
             else:
                 # Password doesn't match
-                return render(request, 'home/flogin.html', {'error_message': 'Invalid username or password'}) 
+                return render(request, 'home/login.html', {'error_message': 'Invalid username or password'})
         else:
-            return render(request, 'home/flogin.html', {'error_message': 'User no longer part of this institution'}) 
-    
-    def get(self, request):
-        if request.user.is_authenticated:
-            if request.user.is_staff:
-                return redirect('/adminlogin/admin_page')
-            return redirect(f'{request.user.username}/',faculty_id=request.user.username)
-        return render(request, 'home/flogin.html')
-    
-class AdminLoginView(View):
-    def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        try:
-            admin = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return render(request, 'home/alogin.html', {'error_message': 'Invalid username or password'}) 
-        
-        if check_password(password, admin.password):
-            # Password matches, log the user in
-            active_sessions = Session.objects.filter(expire_date__gte=timezone.now(), session_key__contains=admin.id)
-            
-            for session in active_sessions:
-                # Delete the session if found
-                session.delete()
-
-            # Log the user in
-            login(request, admin)
-
-            # Redirect to a page after successful login
-            return redirect('/adminlogin/admin_page')
-        else:
-            # Password doesn't match
-            return render(request, 'home/alogin.html', {'error_message': 'Invalid username or password'})
+            return render(request, 'home/login.html', {'error_message': 'Invalid username or password'})
         
     def get(self, request):
         if request.user.is_authenticated:
             if request.user.is_staff:
                 return redirect('/adminlogin/admin_page')
             return redirect(f'{request.user.username}/',faculty_id=request.user.username)
-        return render(request, 'home/alogin.html')
+        return render(request, 'home/login.html')
 
 class AdminPageView(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request):
@@ -198,10 +186,27 @@ class SetFacultySessionView(LoginRequiredMixin, View):
                 notification.delete()
                 messages.success(request, 'Edit access request accepted successfully.')
                 return redirect('set_faculty_session', faculty_id=faculty_id)
+
             except Exception as e:
                 print(f"An error occurred: {e}")
                 messages.error(request, 'Failed to update data')
                 return redirect('set_faculty_session_admin', faculty_id=faculty_id)
+            
+        elif 'profile_photo' in request.FILES:
+            try:
+                # Get or create profile for the faculty
+                profile, created = Profile.objects.get_or_create(user=faculty)
+
+                # Update profile picture
+                profile.image = request.FILES['profile_photo']
+                profile.save()
+                messages.success(request, 'Profile picture updated successfully.')
+                print("Profile after update:", profile.image)
+            except Exception as e:
+                messages.error(request, f'An error occurred: {e}')  # Redirect to the profile page after successful upload
+            if 'adminlogin' in request.path:
+                return redirect('set_faculty_session_admin', faculty_id=faculty_id)
+            return redirect('set_faculty_session', faculty_id=faculty_id)
             
 
 class DeleteFacultyView(LoginRequiredMixin, StaffRequiredMixin, View):
@@ -223,10 +228,12 @@ class ArchiveDataView(LoginRequiredMixin, StaffRequiredMixin, View):
             # If the user is not a staff member, return the forbidden page
             return render(request, 'home/forbidden.html', status=403)
         fac_objs = Faculty_Login.objects.filter(deleted=True)
+        notifications = Notification.objects.order_by('-created_at')[:20]
 
         # Pass the queryset to the template context
         context = {
-            'faculty_logins': list(fac_objs)
+            'faculty_logins': list(fac_objs),
+            'notifications': list(notifications)
         }
         return render(request, 'home/archive_data.html',context)
 
@@ -480,17 +487,22 @@ class AdminCoursesTaughtView(LoginRequiredMixin, View):
                     # Extract the counter from the field name
                     counter = int(key.split('course-id')[1])
 
-                    c_taughts = CoursesTaught.objects.filter(user=faculty, sno=counter)
+                    course=request.POST.get(f'course-id{counter}')
+                    course_exists=Course.objects.filter(course_id=course).exists()
 
+                    c_taughts = CoursesTaught.objects.filter(user=faculty, sno=counter)
+                    
                     if c_taughts.exists():
                         c_taught = c_taughts.first()  # Get the first matching c_taught
                     else:
                         c_taught = CoursesTaught(user=faculty, sno=counter)  # Create a new c_taught object
 
                     # Update the award attributes
-                    c_taught.course_id_id=request.POST.get(f'course-id{counter}')
-                    c_taught.save()
-            
+                    if course_exists:
+                        c_taught.course_id=request.POST.get(f'course-id{counter}')
+                        c_taught.save()
+                    else:
+                        messages.error(request, 'Course does not exist')
             messages.success(request, 'Courses updated successfully')
             return redirect('admin_coursestaught',faculty_id=faculty_id)
         except:
@@ -696,10 +708,6 @@ def admin_page_filter(request):
 # Convert the common elements back to a list if needed
         common_elements_list = list(common_elements)
 
-
-
-
-        
         if common_elements_list:
             # If user details are found, render a template with the details
             return render(request, 'home/admin_home_page.html', {'faculty_logins': common_elements_list})
@@ -800,10 +808,6 @@ def archive_page_filter(request):
 
 # Convert the common elements back to a list if needed
         common_elements_list = list(common_elements)
-
-
-
-
         
         if common_elements_list:
             # If user details are found, render a template with the details
@@ -811,3 +815,156 @@ def archive_page_filter(request):
         else:
             # If user details are not found, render a template with a message
             return render(request, 'home/details_not_found.html')
+
+
+class CoursesView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+             return render(request, 'home/forbidden.html', status=403)
+        
+        courses = Course.objects.filter(deleted=False)
+        notifications = Notification.objects.order_by('-created_at')[:20]
+        # Pass the queryset to the template context
+        context = {
+            'courses': list(courses),
+            'notifications' : list(notifications)
+        }
+        return render(request,'home/course_view.html',context)
+    
+    def post(self, request):
+        course_id=request.POST.get('course_id')
+        course_name=request.POST.get('course_name')
+        course_type=request.POST.get('course_type')
+        if course_id and course_name and course_type:
+            Course.objects.create(course_id=course_id, course_name=course_name, course_type=course_type)
+        return redirect('courses_view')
+
+class DeleteCourseView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def post(self, request, course_id):
+        if not request.user.is_staff:
+             return render(request, 'home/forbidden.html', status=403)
+        course = get_object_or_404(Course, course_id=course_id) 
+        course.deleted=True
+        course.save()  # Save the changes to the faculty instance 
+        return redirect('courses_view')
+
+class ArchiveCoursesView(LoginRequiredMixin, StaffRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            # If the user is not a staff member, return the forbidden page
+            return render(request, 'home/forbidden.html', status=403)
+        courses = Course.objects.filter(deleted=True)
+        notifications = Notification.objects.order_by('-created_at')[:20]
+
+        # Pass the queryset to the template context
+        context = {
+            'courses': list(courses),
+            'notifications': list(notifications)
+        }
+        return render(request, 'home/archive_courses.html',context)
+@login_required
+def course_page_filter(request):
+    if request.method=='POST':
+        course_type=request.POST.get('course-type')
+        filtered_courses=Course.objects.filter(course_type=course_type)
+        filtered_courses_list=list(filtered_courses)
+        if filtered_courses_list:
+            return render(request,'home/course_view.html', {'courses':filtered_courses_list})
+        else:
+            # If user details are not found, render a template with a message
+            return render(request, 'home/details_not_found.html')
+@login_required
+def archive_course_filter(request):
+    if request.method=='POST':
+        course_type=request.POST.get('course-type')
+        filtered_courses=Course.objects.filter(course_type=course_type)
+        filtered_courses_list=list(filtered_courses)
+        if filtered_courses_list:
+            return render(request,'home/archive_courses.html', {'courses':filtered_courses_list})
+        else:
+            # If user details are not found, render a template with a message
+            return render(request, 'home/details_not_found.html')
+        
+def generate_report(request, username):
+    def link_callback(uri, rel):
+        """
+        Convert HTML URIs to absolute system paths so xhtml2pdf can access those
+        resources
+        """
+        result = finders.find(uri)
+        if result:
+                if not isinstance(result, (list, tuple)):
+                        result = [result]
+                result = list(os.path.realpath(path) for path in result)
+                path=result[0]
+        else:
+                sUrl = settings.STATIC_URL        # Typically /static/
+                sRoot = settings.STATIC_ROOT      # Typically /home/userX/project_static/
+                mUrl = settings.MEDIA_URL         # Typically /media/
+                mRoot = settings.MEDIA_ROOT       # Typically /home/userX/project_static/media/
+
+                if uri.startswith(mUrl):
+                        path = os.path.join(mRoot, uri.replace(mUrl, ""))
+                elif uri.startswith(sUrl):
+                        path = os.path.join(sRoot, uri.replace(sUrl, ""))
+                else:
+                        return uri
+
+        # make sure that file exists
+        if not os.path.isfile(path):
+                raise RuntimeError(
+                        'media URI must start with %s or %s' % (sUrl, mUrl)
+                )
+        return path
+    faculty = get_object_or_404(Faculty_Login, username=username)
+    
+    # Fetch professional experience and academic performance
+    professional_experiences = Professionalexp.objects.filter(user=faculty)
+    academic_performances = AcademicPerformance.objects.filter(user=faculty)
+    
+    report_data = {
+        'faculty': {
+            'username': faculty.username,
+            'personaldetail': {
+                'first_name': faculty.personaldetail.first_name,
+                'last_name': faculty.personaldetail.last_name,
+                'dob': faculty.personaldetail.dob,
+                'contact_no': faculty.personaldetail.contact_no,
+                'address': faculty.personaldetail.address,
+                'email_id': faculty.personaldetail.email_id,
+                'aicte_id': faculty.personaldetail.aicte_id,
+                'blood_grp': faculty.personaldetail.get_blood_grp_display(),
+            },
+            'professionaldetail': {
+                'designation': faculty.professionaldetail.designation,
+                'highest_qualification': faculty.professionaldetail.get_highest_qualification_display(),
+                'joining_date': faculty.professionaldetail.joining_date,
+                'years_of_experience': faculty.professionaldetail.years_of_experience,
+                'languages_known': faculty.professionaldetail.languages_known,
+                'programming_languages': faculty.professionaldetail.programming_languages,
+            },
+            'professional_experiences': professional_experiences,
+            'academic_performances': academic_performances,
+        }
+    }
+
+    template_file='home/report_template.html'
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+    # find the template and render it.
+    template = get_template(template_file)
+    html = template.render(report_data)
+
+    pisa_status = pisa.CreatePDF(
+       html, dest=response, link_callback=link_callback)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ssn_{faculty.personaldetail.first_name}_{faculty.personaldetail.last_name}_report.pdf"'
+
+     # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response, link_callback=link_callback)
+    # if error then show some funny view
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response

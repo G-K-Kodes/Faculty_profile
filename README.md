@@ -2,7 +2,7 @@
  
 Welcome to the Faculty Profile System! This README file provides detailed instructions on how to install, configure, and use the system. This system allows university faculty members to manage their professional profiles efficiently.  
 
-Features
+#Features
 User Authentication: Secure login and registration for faculty members.
 
 Profile Management: Easily add, edit, and delete personal and professional information.
@@ -15,7 +15,8 @@ Search Functionality: Powerful search to find faculty members by name, departmen
 
 Responsive Design: Accessible on both desktop and mobile devices. 
 
-Contributing
+#Contributing
+
 We welcome contributions to the Faculty Profile System! To contribute:
 
 1.Fork the repository.

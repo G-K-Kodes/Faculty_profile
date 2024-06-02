@@ -317,8 +317,8 @@
     </script>
     {% endif %}
     <script>
-        var isAdminLogin = {{ request.path|contains:'/adminlogin/'|yesno:"true,false" }}
-        var isEditGranted = {{ faculty.edit_granted|yesno:"true,false" }};
+        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}" !== "";
+        var isEditGranted = "{{ faculty.edit_granted}}"!=="";
         var conditionMet = !(isAdminLogin || isEditGranted);
 
         // Get the button element and tooltip message element

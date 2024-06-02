@@ -25,7 +25,7 @@ urlpatterns = [
     path('adminlogin/<int:faculty_id>/admin_professional', views.AdminProfessionalView.as_view(), name='admin_professional'),
     path('adminlogin/<int:faculty_id>/admin_professionalexp', views.AdminProfessionalExpView.as_view(), name='admin_profexp'),
     path('adminlogin/<int:faculty_id>/admin_coursestaught', views.AdminCoursesTaughtView.as_view(), name='admin_coursestaught'), 
-    path('adminlogin/<int:faculty_id>/admin_awards', views.AdminCoursesTaughtView.as_view(), name='admin_awards'), 
+    path('adminlogin/<int:faculty_id>/admin_awards', views.AdminAwardsView.as_view(), name='admin_awards'), 
 
 
 

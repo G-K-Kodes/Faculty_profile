@@ -203,6 +203,38 @@
             padding: 5px;
             border-radius: 50%;
         }
+
+        .custom-file {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            margin-bottom: 0;
+        }
+
+        .custom-file-input {
+            position: relative;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            margin: 0;
+            opacity: 0;
+        }
+
+        .custom-file-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+        }
     </style>
 </head>
 
@@ -218,7 +250,8 @@
             {{ error_message }}
         </div>
         {% endif %}
-        <form id="awardsForm" method="POST" action="{% url 'admin_awards' faculty_id=faculty.username %}">
+        <form id="awardsForm" method="POST" enctype="multipart/form-data"
+            action="{% url 'admin_awards' faculty_id=faculty.username %}">
             {% csrf_token %}
             {% for award in awards %}
             <div class="form-group">
@@ -231,6 +264,21 @@
                 <input type="date" class="form-control" id="year-of-rec{{ forloop.counter }}"
                     name="year-of-rec{{ forloop.counter }}" value="{{ award.year_of_rec|date:'Y-m-d' }}">
             </div>
+
+            <div class="form-group">
+                <label for="proof{{ forloop.counter }}">Proof:</label>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="proof{{ forloop.counter }}" name="proof{{ forloop.counter }}" onchange="showFileName(this, {{ forloop.counter }})">
+                    <label class="custom-file-label" id="file-label-{{ forloop.counter }}" for="proof{{ forloop.counter }}">
+                        {% if award.proof %}
+                            {{ award.proof.name }}
+                        {% else %}
+                            Choose file
+                        {% endif %}
+                    </label>
+                </div>
+            </div>
+
             {% endfor %}
             <div id="additionalFields">
                 <!-- Additional input fields will be appended here -->
@@ -241,10 +289,10 @@
         </form>
     </div>
     <script>
-        var isAdminLogin = {{ request.path|contains:'/adminlogin/'|yesno:"true,false" }}
-        var isEditGranted = {{ faculty.edit_granted|yesno:"true,false" }};
+        var isAdminLogin = "{{ request.path|contains:'/adminlogin/' }}" !== "";
+        var isEditGranted = "{{ faculty.edit_granted}}"!=="";
         var conditionMet = !(isAdminLogin || isEditGranted);
-        
+
         // Get the button element and tooltip message element
         var button1 = document.getElementById("submitButton");
         var button2 = document.getElementById("addfields")
@@ -271,6 +319,12 @@
 
         // Call the function initially to set the button's initial state
         updateButtonAvailability();
+
+        function showFileName(input, counter) {
+            var fileName = input.files[0].name;
+            var label = document.getElementById('file-label-' + counter);
+            label.textContent = fileName;
+        }
 
         var counter = {{ awards| length }};
 

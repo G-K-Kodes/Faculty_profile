@@ -118,6 +118,8 @@ class CreateSignupView(LoginRequiredMixin, StaffRequiredMixin, View):
 
         if not username.isdigit():
             return render(request, 'home/create_signup.html', {'error_message': 'Digital ID must be a number.'})
+        if not len(username)>=8:
+            return render(request, 'home/create_signup.html', {'error_message': 'The password should have 8 characters or more.'})
         
         if username and password:
             Faculty_Login.objects.create(username=username, password=password)
@@ -421,13 +423,15 @@ class AdminAwardsView(LoginRequiredMixin, View):
 
                     # Update the award attributes
                     award.awardname = request.POST.get(f'award-name{award_number}')
-                    award.year_of_rec = request.POST.get(f'year-of-rec{award_number}')
+                    award.year_of_rec = request.POST.get(f'year-of-rec{award_number}') 
+                    award.proof = request.FILES.get(f'proof{award_number}')
                     award.save()
+
             messages.success(request, 'Award details updated successfully')
             # Redirect back to the awards page after saving
-            return redirect('admin_awards', faculty_id=faculty_id)
         except:
             messages.error(request, 'Failed to update data')
+        return redirect('admin_awards', faculty_id=faculty_id)
 
 class AdminProfessionalExpView(LoginRequiredMixin, View):
     def get(self, request, faculty_id):

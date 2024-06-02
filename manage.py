@@ -8,9 +8,7 @@ import time
 
 def start_scheduler():
     """Start the scheduler command at regular intervals."""
-    while True:
-        subprocess.run(['python', 'manage.py', 'scheduler'])
-        time.sleep(30) 
+    subprocess.run(['python', 'manage.py', 'scheduler'])
 
 def main():
     """Run administrative tasks."""
@@ -25,7 +23,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     else:
-        scheduler_thread = threading.Thread(target=start_scheduler)
+        scheduler_thread = threading.Timer(30.0,start_scheduler)
         scheduler_thread.start()
         execute_from_command_line(sys.argv)
 

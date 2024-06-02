@@ -220,7 +220,8 @@ class AcademicPerformance(models.Model):
     degree = models.CharField(max_length=DEGREE_MAX_LENGTH)
     institution_code = models.CharField(max_length=INSTITUTION_CODE_MAX_LENGTH)
     year_of_completion = models.DateField()
-    remark = models.CharField(max_length=255)
+    remark = models.CharField(max_length=255)  
+
 
     def __str__(self):
         return f"{self.user.username} - {self.degree} ({self.year_of_completion})" 
@@ -238,7 +239,8 @@ class Award(models.Model):
     sno=models.AutoField(primary_key=True)
     user = models.ForeignKey(Faculty_Login, on_delete=models.CASCADE)
     awardname = models.CharField(max_length=255)
-    year_of_rec = models.DateField() 
+    year_of_rec = models.DateField()  
+    proof = models.FileField(upload_to='documents/',null=True)
     
 
     def __str__(self):

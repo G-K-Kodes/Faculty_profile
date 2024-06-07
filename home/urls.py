@@ -19,6 +19,7 @@ urlpatterns = [
     path('adminlogin/<int:faculty_id>', views.SetFacultySessionView.as_view(), name='set_faculty_session_admin'),  
     path('create_signup', views.CreateSignupView.as_view(), name='create_signup'),
     path('<str:username>/report', views.generate_report, name='generate_report'),
+    path('<str:username>/report/admin', views.generate_report, name='generate_report_admin'),
     
     path('adminlogin/<int:faculty_id>/admin_personal', views.AdminPersonalView.as_view(), name='admin_personal'),
     path('adminlogin/<int:faculty_id>/admin_academic', views.AdminAcademicView.as_view(), name='admin_academic'),

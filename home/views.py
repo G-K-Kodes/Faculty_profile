@@ -57,7 +57,7 @@ class FacultyLoginView(View):
 
                     # Login user
                     login(request, user)
-                    return redirect(f'{request.user.username}/',faculty_id=request.user.username)   # Assuming 'about' is the name of the URL pattern for the about page
+                    return redirect(f'../{request.user.username}/', faculty_id=request.user.username)   # Assuming 'about' is the name of the URL pattern for the about page
                 else:
                     # Password doesn't match
                     return render(request, 'home/login.html', {'error_message': 'Invalid username or password'}) 
@@ -118,7 +118,7 @@ class CreateSignupView(LoginRequiredMixin, StaffRequiredMixin, View):
 
         if not username.isdigit():
             return render(request, 'home/create_signup.html', {'error_message': 'Digital ID must be a number.'})
-        if not len(username)>=8:
+        if not len(password)>=8:
             return render(request, 'home/create_signup.html', {'error_message': 'The password should have 8 characters or more.'})
         
         if username and password:
@@ -216,12 +216,13 @@ class DeleteFacultyView(LoginRequiredMixin, StaffRequiredMixin, View):
         if not request.user.is_staff:
              return render(request, 'home/forbidden.html', status=403)
         faculty = get_object_or_404(Faculty_Login, username=faculty_id) 
-        faculty.deleted=True   
-        p_details=get_object_or_404(ProfessionalDetail, user=faculty_id)  
-        current_date = timezone.now().date() 
-        p_details.leaving_date=current_date
+        faculty.deleted=True
+        p_details=ProfessionalDetail.objects.filter(user=faculty_id)
+        if p_details:  
+            current_date = timezone.now().date() 
+            p_details.leaving_date=current_date
+            p_details.save()
         faculty.save()  # Save the changes to the faculty instance 
-        p_details.save()
         return redirect('ad_page')
 
 class ArchiveDataView(LoginRequiredMixin, StaffRequiredMixin, View):
@@ -921,7 +922,18 @@ def generate_report(request, username):
                 )
         return path
     faculty = get_object_or_404(Faculty_Login, username=username)
-    
+    pe_exists=Professionalexp.objects.filter(user=faculty).exists()
+    ae_exists=AcademicPerformance.objects.filter(user=faculty).exists()
+    if not pe_exists:
+        messages.error(request, 'Professional Details not filled in')
+        if not 'admin' in request.path:
+            return redirect('set_faculty_session', faculty_id=username)
+        return redirect('set_faculty_session_admin', faculty_id=username)
+    if not ae_exists:
+        messages.error(request, 'Academic Details not filled in')
+        if not 'admin' in request.path:
+            return redirect('set_faculty_session', faculty_id=username)
+        return redirect('set_faculty_session_admin', faculty_id=username)
     # Fetch professional experience and academic performance
     professional_experiences = Professionalexp.objects.filter(user=faculty)
     academic_performances = AcademicPerformance.objects.filter(user=faculty)

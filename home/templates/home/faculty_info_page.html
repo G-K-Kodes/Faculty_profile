@@ -210,7 +210,11 @@
         <a href="{% url 'logout' %}">Log Out</a>
         {% endif %}
         <h1>Faculty Details</h1>
+        {% if not '/adminlogin/' in request.path %}
         <a href="{% url 'generate_report' faculty.username %}" id="generateReportButton" class="grid-item">Generate Report</a>
+        {% else %}
+        <a href="{% url 'generate_report_admin' faculty.username %}"id="generateReportButton" class="grid-item">Generate Report</a>
+        {% endif %}
         {% if not '/adminlogin/' in request.path %}
         {% if not faculty.edit_granted %}
         <form method="post" action="">

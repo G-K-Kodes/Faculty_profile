@@ -2,7 +2,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
-from django.urls import reverse
+from django.contrib.auth.hashers import make_password
 from django.views import View
 from datetime import datetime, timedelta
 from django.contrib.auth.hashers import check_password
@@ -123,7 +123,8 @@ class CreateSignupView(LoginRequiredMixin, StaffRequiredMixin, View):
         
         if username and password:
             Faculty_Login.objects.create(username=username, password=password)
-            User.objects.create(username=username, password=password, is_staff=False)
+            hashed_password = make_password(password)  # Hash the password
+            User.objects.create(username=username, password=hashed_password, is_staff=False)
             # create professionaldetail obj
             return redirect('adminlogin/admin_page')  # Redirect to a success page
         else:
@@ -896,30 +897,23 @@ def generate_report(request, username):
         Convert HTML URIs to absolute system paths so xhtml2pdf can access those
         resources
         """
-        result = finders.find(uri)
-        if result:
-                if not isinstance(result, (list, tuple)):
-                        result = [result]
-                result = list(os.path.realpath(path) for path in result)
-                path=result[0]
-        else:
-                sUrl = settings.STATIC_URL        # Typically /static/
-                sRoot = settings.STATIC_ROOT      # Typically /home/userX/project_static/
-                mUrl = settings.MEDIA_URL         # Typically /media/
-                mRoot = settings.MEDIA_ROOT       # Typically /home/userX/project_static/media/
+        sUrl = settings.STATIC_URL        # Typically /static/
+        sRoot = settings.STATIC_ROOT      # Typically /home/userX/project_static/
+        mUrl = settings.MEDIA_URL         # Typically /media/
+        mRoot = settings.MEDIA_ROOT       # Typically /home/userX/project_static/media/
 
-                if uri.startswith(mUrl):
-                        path = os.path.join(mRoot, uri.replace(mUrl, ""))
-                elif uri.startswith(sUrl):
-                        path = os.path.join(sRoot, uri.replace(sUrl, ""))
-                else:
-                        return uri
+        if uri.startswith(mUrl):
+            path = os.path.join(mRoot, uri.replace(mUrl, ""))
+        elif uri.startswith(sUrl):
+            path = os.path.join(sRoot, uri.replace(sUrl, ""))
+        else:
+            return uri
 
         # make sure that file exists
         if not os.path.isfile(path):
-                raise RuntimeError(
-                        'media URI must start with %s or %s' % (sUrl, mUrl)
-                )
+            raise RuntimeError(
+                'media URI must start with %s or %s' % (sUrl, mUrl)
+            )
         return path
     faculty = get_object_or_404(Faculty_Login, username=username)
     pe_exists=Professionalexp.objects.filter(user=faculty).exists()
@@ -961,6 +955,7 @@ def generate_report(request, username):
             },
             'professional_experiences': professional_experiences,
             'academic_performances': academic_performances,
+            'profile_image_url': faculty.profile.image.url
         }
     }
 

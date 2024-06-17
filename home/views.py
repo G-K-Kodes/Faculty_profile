@@ -17,7 +17,9 @@ from xhtml2pdf import pisa
 from.models import Faculty_Login,ProfessionalDetail,Award,AcademicPerformance,Professionalexp,Profile,Course,CoursesTaught,PersonalDetail,Notification
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.core.mail import send_mail
 import os
+
 
 def home(request):
     if request.user.is_authenticated:
@@ -115,16 +117,29 @@ class CreateSignupView(LoginRequiredMixin, StaffRequiredMixin, View):
     def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
+        email = request.POST.get('email')
 
         if not username.isdigit():
             return render(request, 'home/create_signup.html', {'error_message': 'Digital ID must be a number.'})
         if not len(password)>=8:
             return render(request, 'home/create_signup.html', {'error_message': 'The password should have 8 characters or more.'})
         
-        if username and password:
-            Faculty_Login.objects.create(username=username, password=password)
+        if username and password and email:
+            new_user=Faculty_Login.objects.create(username=username, password=password)
             hashed_password = make_password(password)  # Hash the password
             User.objects.create(username=username, password=hashed_password, is_staff=False)
+            personal_detail = PersonalDetail.objects.create(
+                digital_id=username,  # Assuming digital_id is same as username
+                email_id=email,  # Set email_id to the provided email
+                faculty_login=new_user  # Link to the Faculty_Login instance
+            )
+            subject = 'Account Created Successfully'
+            message = f'''Hello {username}, your account has been successfully created. Please login to this website to make modifications in your profile, with these credentials.\n\n 
+            Username : {username}\n 
+            Password : {password}'''
+            from_email = settings.EMAIL_HOST_USER
+            recipient_list = [email]
+            send_mail(subject, message, from_email, recipient_list)
             # create professionaldetail obj
             return redirect('adminlogin/admin_page')  # Redirect to a success page
         else:
@@ -157,6 +172,13 @@ class SetFacultySessionView(LoginRequiredMixin, View):
                             message=f"Edit access requested by {faculty.personaldetail.first_name} {faculty.personaldetail.last_name}.",
                             recipient = faculty
                         )
+                        firstname=faculty.personaldetail.first_name
+                        lastname=faculty.personaldetail.last_name
+                        subject = f'Edit Access Requested by {firstname} {lastname}'
+                        message = f'''Hello admin, the user, {firstname} {lastname} has requested for an edit access for their account at time {current_time}.\n\n
+                        Please consider to accept the request as soon as possible'''
+                        from_email = recipient_list = settings.EMAIL_HOST_USER
+                        send_mail(subject, message, from_email, recipient_list)
                     else:
                         messages.error(request, 'Edit access request already sent. Please wait for admin response.')
                 else:
@@ -184,11 +206,21 @@ class SetFacultySessionView(LoginRequiredMixin, View):
                 expiry_time = timezone.now() + expiry_delta
                 faculty_login.edit_expiry_time = expiry_time
                 faculty_login.save()
+                current_time = timezone.now()
+                email=faculty_login.personaldetail.email_id
+                firstname=login.personaldetail.first_name
+                lastname=login.personaldetail.last_name
+                subject = 'Edit Access Granted Successfully'
+                message = f'''Hello {firstname} {lastname}, the edit access of your account is granted by the administrator at time {current_time}.\n\n
+                Please keep in mind that this access will expire at time {expiry_time}, so it would be more efficient to complete all your edits as soon as possible'''
+                from_email = settings.EMAIL_HOST_USER
+                recipient_list = [email]
+                send_mail(subject, message, from_email, recipient_list)
 
                 # Delete the notification since the request has been handled
                 notification.delete()
                 messages.success(request, 'Edit access request accepted successfully.')
-                return redirect('set_faculty_session', faculty_id=faculty_id)
+                return redirect('set_faculty_session_admin', faculty_id=faculty_id)
 
             except Exception as e:
                 print(f"An error occurred: {e}")

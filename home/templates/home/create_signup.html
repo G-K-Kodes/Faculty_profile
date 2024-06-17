@@ -1,14 +1,17 @@
-{% comment %} <!DOCTYPE html>
+{% comment %}
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signup Page</title>
 </head>
+
 <body>
     <h2>Signup</h2>
     {% if error %}
-        <p>{{ error }}</p>
+    <p>{{ error }}</p>
     {% endif %}
     <form method="POST" action="{% url 'create_signup' %}">
         {% csrf_token %}
@@ -19,13 +22,15 @@
         <button type="submit">Submit</button>
     </form>
 </body>
-</html> {% endcomment %} 
+
+</html> {% endcomment %}
 
 
 
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +39,8 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color:beige;                /* Properly referencing the static background image */
+            background-color: beige;
+            /* Properly referencing the static background image */
             background-size: cover;
             background-position: center;
             display: flex;
@@ -44,24 +50,25 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .login-container {
-            background-color: rgba(255, 255, 255, 0.9); /* White background with some transparency */
+            background-color: rgba(255, 255, 255, 0.9);
+            /* White background with some transparency */
             padding: 20px;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             max-width: 400px;
             width: 100%;
         }
-        
+
         h2 {
             text-align: center;
         }
-        
+
         label {
             font-weight: bold;
         }
-        
+
         .error-message {
             color: red;
             text-align: center;
@@ -69,17 +76,22 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <h2>New Faculty</h2>
         {% if error_message %}
-            <p class="error-message">{{ error_message }}</p>
+        <p class="error-message">{{ error_message }}</p>
         {% endif %}
         <form method="POST" action="{% url 'create_signup' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label for="DigitalID">Digital ID:</label>
+                <label for="username">Username:</label>
                 <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <label for="password">Password:</label>
@@ -91,5 +103,5 @@
     <!-- Bootstrap JS (Optional) -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
-</html> 
 
+</html>

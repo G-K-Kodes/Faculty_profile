@@ -4,7 +4,6 @@ import os
 import sys
 import subprocess
 import threading
-import time
 
 def start_scheduler():
     """Start the scheduler command at regular intervals."""
